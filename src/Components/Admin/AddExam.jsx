@@ -1,163 +1,10 @@
-// import { useState } from 'react';
-// import { Plus, X } from 'lucide-react';
-
-// const AddExams = () => {
-//   const [examName, setExamName] = useState('');
-//   const [subjects, setSubjects] = useState([{ name: '' }]);
-//   const [error, setError] = useState('');
-//   const [success, setSuccess] = useState('');
-//   const [exams, setExams] = useState([]);
-
-//   const addSubject = () => {
-//     setSubjects([...subjects, { name: '' }]);
-//   };
-
-//   const removeSubject = (index) => {
-//     if (subjects.length > 1) {
-//       setSubjects(subjects.filter((_, i) => i !== index));
-//     }
-//   };
-
-//   const updateSubject = (index, value) => {
-//     const newSubjects = [...subjects];
-//     newSubjects[index].name = value;
-//     setSubjects(newSubjects);
-//   };
-
-//   const handleSubmit = (e) => {
-//     e.preventDefault();
-//     if (!examName.trim()) {
-//       setError('Exam name is required.');
-//       return;
-//     }
-//     if (exams.some(exam => exam.name === examName)) {
-//       setError('Exam already exists');
-//       return;
-//     }
-//     if (subjects.some((sub) => !sub.name.trim())) {
-//       setError('All subject names must be filled.');
-//       return;
-//     }
-
-//     const newExam = {
-//       // id: Date.now().toString(),
-//       name: examName,
-//       subjects: subjects.filter(sub => sub.name.trim()),
-//       createdAt: new Date()
-//     };
-
-//     setExams([...exams, newExam]);
-//     setSuccess('Exam added successfully!');
-//     setError('');
-//     setExamName('');
-//     setSubjects([{ name: '' }]);
-//     setTimeout(() => setSuccess(''), 3000);
-//   };
-//   console.log(exams);
-  
-
-//   return (
-//     <div className="space-y-6">
-//       {/* Add Exam Form */}
-//       <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-300 p-6 animate-in slide-in-from-right duration-500">
-//         <h2 className="text-xl font-semibold text-gray-800 mb-4">Add Exam</h2>
-//         <form onSubmit={handleSubmit} className="space-y-4">
-//           <div>
-//             <label className="block text-sm font-medium text-gray-700">Exam Name</label>
-//             <input
-//               type="text"
-//               value={examName}
-//               onChange={(e) => setExamName(e.target.value)}
-//               placeholder="Midterm Exam 2025"
-//               className="mt-1 block w-full h-10 p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
-//             />
-//           </div>
-//           <div>
-//             <label className="block text-sm font-medium text-gray-700">Subjects</label>
-//             {subjects.map((subject, index) => (
-//               <div key={index} className="flex items-center gap-2 mt-2">
-//                 <input
-//                   type="text"
-//                   value={subject.name}
-//                   onChange={(e) => updateSubject(index, e.target.value)}
-//                   placeholder="Math"
-//                   className="block w-full h-10 p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
-//                 />
-//                 {subjects.length > 1 && (
-//                   <button
-//                     type="button"
-//                     onClick={() => removeSubject(index)} 
-//                     className="text-red-600 hover:text-red-800 h-7 w-7 bg-red-50 "
-//                   ><X/> </button>
-//                 )}
-//               </div>
-//             ))}
-//             <button
-//               type="button"
-//               onClick={addSubject}
-//               className="mt-2 flex items-center text-blue-600 hover:text-blue-800"
-//             >
-//               <Plus className="w-5 h-5 mr-1" /> Add Subject
-//             </button>
-//           </div>
-//           {error && <p className="text-red-500 text-sm">{error}</p>}
-//           {success && <p className="text-green-500 text-sm">{success}</p>}
-//           <button
-//             type="submit"
-//             className="w-full h-10 bg-[#3D4577] hover:bg-[#3d4577e5] text-white font-md rounded-lg transition-all duration-300"
-//           >
-//             Add Exam
-//           </button>
-//         </form>
-//       </div>
-
-//       {/* Exams List Table */}
-//       <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200">
-//         <div className="p-6">
-//           <h2 className="text-xl font-semibold text-gray-800 mb-4">Exam List</h2>
-          
-//           {exams.length === 0 ? (
-//             <p className="text-gray-500">No exams added yet.</p>
-//           ) : (
-//             <div className="overflow-x-auto">
-//               <table className="w-full text-sm border-collapse">
-//                 <thead className="bg-gray-100">
-//                   <tr>
-//                     <th className="p-3 text-left font-semibold text-gray-700 border-b">Exam Name</th>
-//                     <th className="p-3 text-left font-semibold text-gray-700 border-b">Subjects</th>
-//                     <th className="p-3 text-left font-semibold text-gray-700 border-b">Created At</th>
-//                   </tr>
-//                 </thead>
-//                 <tbody>
-//                   {exams.map((exam) => (
-//                     <tr key={exam.id} className="border-b border-gray-100 hover:bg-gray-50">
-//                       <td className="p-3 font-medium text-gray-900">{exam.name}</td>
-//                       <td className="p-3">
-//                         <ul className="list-disc list-inside">
-//                           {exam.subjects.map((subject, index) => (
-//                             <li key={index}>{subject.name}</li>
-//                           ))}
-//                         </ul>
-//                       </td>
-//                       <td className="p-3 text-gray-500 text-sm">{exam.createdAt.toLocaleDateString()}</td>
-//                     </tr>
-//                   ))}
-//                 </tbody>
-//               </table>
-//             </div>
-//           )}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default AddExams;
 import { useState, useEffect } from 'react';
 import { Plus, X, Edit, Trash2, Check, Loader2 } from 'lucide-react';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { firestore } from '../../Firebase/Config';
 import { toast } from 'sonner';
+import Swal from 'sweetalert2';
+
 
 const AddExams = () => {
   const [examName, setExamName] = useState('');
@@ -176,7 +23,6 @@ const AddExams = () => {
         const examsData = querySnapshot.docs.map(doc => {
           const data = doc.data();
           
-          // Handle createdAt date
           let createdAt = new Date();
           if (data.createdAt) {
             if (typeof data.createdAt.toDate === 'function') {
@@ -184,12 +30,10 @@ const AddExams = () => {
             } else if (typeof data.createdAt === 'string') {
               createdAt = new Date(data.createdAt);
             } else if (data.createdAt.seconds) {
-              // Handle Firestore timestamp format
               createdAt = new Date(data.createdAt.seconds * 1000);
             }
           }
 
-          // Handle updatedAt date if exists
           let updatedAt = null;
           if (data.updatedAt) {
             if (typeof data.updatedAt.toDate === 'function') {
@@ -209,7 +53,6 @@ const AddExams = () => {
           };
         });
         
-        // Sort exams by creation date (newest first)
         examsData.sort((a, b) => b.createdAt - a.createdAt);
         setExams(examsData);
         setLoading(false)
@@ -259,7 +102,6 @@ const AddExams = () => {
       const filteredSubjects = subjects.filter(sub => sub.name.trim());
       
       if (editingId) {
-        // Update existing exam
         await updateDoc(doc(firestore, 'exams', editingId), {
           name: examName,
           subjects: filteredSubjects,
@@ -278,7 +120,6 @@ const AddExams = () => {
         setSuccess('Exam updated successfully!');
         toast.success('Exam updated successfully');
       } else {
-        // Check if exam already exists
         const examExists = exams.some(exam => 
           exam.name.toLowerCase() === examName.toLowerCase()
         );
@@ -290,7 +131,6 @@ const AddExams = () => {
           return;
         }
 
-        // Add new exam
         const docRef = await addDoc(collection(firestore, 'exams'), {
           name: examName,
           subjects: filteredSubjects,
@@ -338,19 +178,31 @@ const AddExams = () => {
     setSubjects([{ name: '' }]);
     setError('');
   };
+                
+        
+  
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this exam?')) {
-      try {
-        await deleteDoc(doc(firestore, 'exams', id));
-        setExams(exams.filter(exam => exam.id !== id));
-        toast.success('Exam deleted successfully');
-      } catch (err) {
-        console.error('Error deleting exam: ', err);
-        toast.error('Failed to delete exam');
-      }
+const handleDelete = async (id) => {
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: 'Are you sure you want to delete this exam?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, delete it!',
+    cancelButtonText: 'Cancel',
+  });
+
+  if (result.isConfirmed) {
+    try {
+      await deleteDoc(doc(firestore, 'exams', id));
+      setExams(exams.filter((exam) => exam.id !== id));
+      toast.success('Exam deleted successfully');
+    } catch (err) {
+      console.error('Error deleting exam: ', err);
+      toast.error('Failed to delete exam');
     }
-  };
+  }
+};
 
   if (loading) {
     return (
@@ -362,6 +214,7 @@ const AddExams = () => {
   
   return (
     <div className="space-y-6">
+
       {/* Add/Edit Exam Form */}
       <div 
         id="exam-form"

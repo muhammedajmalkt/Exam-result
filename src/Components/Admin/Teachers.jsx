@@ -1,454 +1,10 @@
-// import { useState, useEffect } from 'react';
-// import { Edit, Trash2, Check, X, Loader2 } from 'lucide-react';
-// import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-// import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-// import { firestore, auth } from '../../Firebase/Config'; 
-
-// const Teachers = () => {
-//   const [formData, setFormData] = useState({
-//     name: '',
-//     email: '',
-//     password: '',
-//     className: '',
-//     section: '',
-//   });
-
-//   const [teachers, setTeachers] = useState([]);
-//   const [classes, setClasses] = useState([]); 
-//   const [sections, setSections] = useState([]); 
-//   const [error, setError] = useState('');
-//   const [success, setSuccess] = useState('');
-//   const [editingId, setEditingId] = useState(null);
-//   const [editFormData, setEditFormData] = useState({
-//     name: '',
-//     email: '',
-//     className: '',
-//     section: '',
-//   });
-//   const [loading, setLoading] = useState(false);
-//   const [fetching, setFetching] = useState(true);
-
-//   // Fetch teachers, classes, and sections from Firestore
-//   useEffect(() => {
-//     const fetchData = async () => {
-//       try {
-//         // Fetch teachers
-//         const teachersSnapshot = await getDocs(collection(firestore, 'teachers'));
-//         const teachersData = teachersSnapshot.docs.map(doc => ({
-//           id: doc.id,
-//           ...doc.data()
-//         }));
-//         setTeachers(teachersData);
-
-//         // Fetch classes
-//         const classesSnapshot = await getDocs(collection(firestore, 'classes'));
-//         const classesData = classesSnapshot.docs.map(doc => ({
-//           id: doc.id,
-//           ...doc.data()
-//         }));
-//         setClasses(classesData);
-
-//         // Fetch sections
-//         const sectionsSnapshot = await getDocs(collection(firestore, 'sections'));
-//         const sectionsData = sectionsSnapshot.docs.map(doc => doc.data().name);
-//         setSections(sectionsData);
-
-//       } catch (err) {
-//         setError('Failed to fetch data. Please try again later.');
-//         console.error(err);
-//       } finally {
-//         setFetching(false);
-//       }
-//     };
-
-//     fetchData();
-//   }, []);
-
-//   // Get available sections for the selected class
-//   const getAvailableSections = (className) => {
-//     if (!className) return [];
-//     const selectedClass = classes.find(cls => cls.name === className);
-//     return selectedClass ? selectedClass.sections : [];
-//   };
-
-//   const handleChange = (e) => {
-//     const { name, value } = e.target;
-//     setFormData((prev) => ({
-//       ...prev,
-//       [name]: value,
-//       ...(name === 'className' ? { section: '' } : {}),
-//     }));
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     const { name, email, password, className, section } = formData;
-
-//     // Validation
-//     if (!/\S+@\S+\.\S+/.test(email)) return setError('Valid email is required.');
-//     if (!name.trim() || name.length < 3) return setError('Name must be at least 3 characters.');
-//     if (!password || password.length < 6) return setError('Password must be at least 6 characters.');
-//     if (!className) return setError('Please select a class.');
-//     if (!section) return setError('Please select a section.');
-
-//     // Validate class-section assignment
-//     const availableSections = getAvailableSections(className);
-//     if (!availableSections.includes(section)) {
-//       return setError(`Section ${section} is not available for ${className}`);
-//     }
-
-//     setLoading(true);
-//     setError('');
-
-//     try {
-//       // Create user in Firebase Authentication
-//       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-//       const user = userCredential.user;
-
-//      // Update the user's displayName
-//     await updateProfile(user, {
-//       displayName: name
-//     });
-
-//       // Add teacher data to Firestore
-//       const docRef = await addDoc(collection(firestore, 'teachers'), {
-//         uid: user.uid,
-//         name,
-//         email,
-//         className,
-//         section,
-//         role: 'teacher',
-//         createdAt: new Date().toISOString()
-//       });
-
-//       // Update local state
-//       setTeachers([...teachers, {
-//         id: docRef.id,
-//         name,
-//         email,
-//         className,
-//         section,
-//         createdAt: new Date().toLocaleString()
-//       }]);
-
-//       setSuccess('Teacher added successfully!');
-//       setFormData({ name: '', email: '', password: '', className: '', section: '' });
-//     } catch (err) {
-//       setError(err.message || 'Failed to add teacher. Please try again.');
-//     } finally {
-//       setLoading(false);
-//       setTimeout(() => setSuccess(''), 3000);
-//     }
-//   };
-
-//   const handleEdit = (teacher) => {
-//     setEditingId(teacher.id);
-//     setEditFormData({
-//       name: teacher.name,
-//       email: teacher.email,
-//       className: teacher.className,
-//       section: teacher.section
-//     });
-//   };
-
-//   const handleEditChange = (e) => {
-//     const { name, value } = e.target;
-//     setEditFormData(prev => ({
-//       ...prev,
-//       [name]: value,
-//       ...(name === 'className' ? { section: '' } : {}),
-//     }));
-//   };
-
-//   const handleUpdate = async () => {
-//     const { name, email, className, section } = editFormData;
-
-//     if (!/\S+@\S+\.\S+/.test(email)) return setError('Valid email is required.');
-//     if (!name.trim() || name.length < 3) return setError('Name must be at least 3 characters.');
-//     if (!className) return setError('Please select a class.');
-//     if (!section) return setError('Please select a section.');
-
-//     // Validate class-section assignment
-//     const availableSections = getAvailableSections(className);
-//     if (!availableSections.includes(section)) {
-//       return setError(`Section ${section} is not available for ${className}`);
-//     }
-
-//     setLoading(true);
-//     try {
-//       await updateDoc(doc(firestore, 'teachers', editingId), {
-//         name,
-//         email,
-//         className,
-//         section,
-//         updatedAt: new Date().toISOString()
-//       });
-
-//       setTeachers(teachers.map(teacher => 
-//         teacher.id === editingId ? { 
-//           ...teacher, 
-//           name,
-//           email,
-//           className,
-//           section,
-//           updatedAt: new Date().toLocaleString()
-//         } : teacher
-//       ));
-
-//       setSuccess('Teacher updated successfully!');
-//       setEditingId(null);
-//     } catch (err) {
-//       setError(err.message || 'Failed to update teacher. Please try again.');
-//     } finally {
-//       setLoading(false);
-//       setTimeout(() => setSuccess(''), 3000);
-//     }
-//   };
-
-//   // ... (keep the handleCancelEdit and handleDelete functions the same)
-
-//   return (
-//     <div className="space-y-6">
-//       {/* Add Teacher Form */}
-//       <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-300 p-6 animate-in slide-in-from-right duration-500">
-//         <h2 className="text-xl font-semibold text-gray-800 mb-4">Add Teacher</h2>
-//         <form onSubmit={handleSubmit} className="space-y-4">
-//           {/* Name */}
-//           <div>
-//             <label className="block text-sm font-medium text-gray-700">Name</label>
-//             <input
-//               type="text"
-//               name="name"
-//               value={formData.name}
-//               onChange={handleChange}
-//               placeholder="John Doe"
-//               className="mt-1 block w-full h-10 p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
-//             />
-//           </div>
-
-//           {/* Email */}
-//           <div>
-//             <label className="block text-sm font-medium text-gray-700">Email</label>
-//             <input
-//             autoComplete='username'
-//               type="email"
-//               name="email"
-//               value={formData.email}
-//               onChange={handleChange}
-//               placeholder="teacher@example.com"
-//               className="mt-1 block w-full h-10 p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
-//             />
-//           </div>
-
-//           {/* Password */}
-//           <div>
-//             <label className="block text-sm font-medium text-gray-700">Password</label>
-//             <input
-//               autoComplete='current-password'
-//               type="password"
-//               name="password"
-//               value={formData.password}
-//               onChange={handleChange}
-//               placeholder="Enter password"
-//               className="mt-1 block w-full h-10 p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
-//             />
-//           </div>
-
-//           {/* Class Selection */}
-//           <div>
-//             <label className="block text-sm font-medium text-gray-700">Class</label>
-//             <select
-//               name="className"
-//               value={formData.className}
-//               onChange={handleChange}
-//               className="mt-1 block w-full h-10 p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
-//             >
-//               <option value="">Select Class</option>
-//               {classes.sort((a, b) =>a.name.localeCompare(b.name) ).map((cls) => (
-//                 <option key={cls.id} value={cls.name}>
-//                   {`Class ${cls.name}`}
-//                 </option>
-//               ))}
-//             </select>
-//           </div>
-
-//           {/* Section Selection */}
-//           {formData.className && (
-//             <div>
-//               <label className="block text-sm font-medium text-gray-700">Section</label>
-//               <select
-//                 name="section"
-//                 value={formData.section}
-//                 onChange={handleChange}
-//                 className="mt-1 block w-full h-10 p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
-//               >
-//                 <option value="">Select Section</option>
-//                 {getAvailableSections(formData.className).map((sec) => (
-//                   <option key={sec} value={sec}>
-//                     {sec}
-//                   </option>
-//                 ))}
-//               </select>
-//             </div>
-//           )}
-
-//           {/* Feedback */}
-//           {error && <p className="text-red-500 text-sm">{error}</p>}
-//           {success && <p className="text-green-500 text-sm">{success}</p>}
-
-//           {/* Submit Button */}
-//           <button
-//             type="submit"
-//             disabled={loading}
-//             className={`w-full h-10 bg-[#3D4577] hover:bg-[#3d4577e5] text-white font-md rounded-lg transition-all duration-300 flex items-center justify-center ${
-//               loading ? 'opacity-70 cursor-not-allowed' : ''
-//             }`}
-//           >
-//             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Add Teacher'}
-//           </button>
-//         </form>
-//       </div>
-
-//       {/* Teachers List Table */}
-//       <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200">
-//         <div className="p-6">
-//           <h2 className="text-xl font-semibold text-gray-800 mb-4">Teachers List</h2>
-          
-//           {fetching ? (
-//             <div className="flex justify-center py-8">
-//               <Loader2 className="w-8 h-8 text-gray-500 animate-spin" />
-//             </div>
-//           ) : teachers.length === 0 ? (
-//             <p className="text-gray-500">No teachers added yet.</p>
-//           ) : (
-//             <div className="overflow-x-auto">
-//               <table className="w-full text-sm border-collapse">
-//                 <thead className="bg-gray-100">
-//                   <tr>
-//                     <th className="p-3 text-left font-semibold text-gray-700 border-b">Name</th>
-//                     <th className="p-3 text-left font-semibold text-gray-700 border-b">Email</th>
-//                     <th className="p-3 text-left font-semibold text-gray-700 border-b">Class</th>
-//                     <th className="p-3 text-left font-semibold text-gray-700 border-b">Section</th>
-//                     <th className="p-3 text-left font-semibold text-gray-700 border-b">Actions</th>
-//                   </tr>
-//                 </thead>
-//                 <tbody>
-//                   {teachers.map((teacher) => (
-//                     <tr key={teacher.id} className="border-b border-gray-100 hover:bg-gray-50">
-//                       {editingId === teacher.id ? (
-//                         <>
-//                           <td className="p-3">
-//                             <input
-//                               type="text"
-//                               name="name"
-//                               value={editFormData.name}
-//                               onChange={handleEditChange}
-//                               className="w-full p-2 border rounded border-gray-400"
-//                             />
-//                           </td>
-//                           <td className="p-3">
-//                             <input
-//                               type="email"
-//                               name="email"
-//                               value={editFormData.email}
-//                               onChange={handleEditChange}
-//                               className="w-full p-2 border rounded border-gray-400"
-//                             />
-//                           </td>
-//                           <td className="p-3">
-//                             <select
-//                               name="className"
-//                               value={editFormData.className}
-//                               onChange={handleEditChange}
-//                               className="w-full p-2 border rounded border-gray-400"
-//                             >
-//                               {classes.map((cls) => (
-//                                 <option key={cls.id} value={cls.name}>
-//                                   {cls.name}
-//                                 </option>
-//                               ))}
-//                             </select>
-//                           </td>
-//                           <td className="p-3">
-//                             <select
-//                               name="section"
-//                               value={editFormData.section}
-//                               onChange={handleEditChange}
-//                               className="w-full p-2 border rounded border-gray-400"
-//                             >
-//                               {getAvailableSections(editFormData.className).map((sec) => (
-//                                 <option key={sec} value={sec}>
-//                                   {sec}
-//                                 </option>
-//                               ))}
-//                             </select>
-//                           </td>
-//                           <td className="p-3">
-//                             <div className="flex gap-2">
-//                               <button
-//                                 onClick={handleUpdate}
-//                                 disabled={loading}
-//                                 className="text-green-600 hover:text-green-800 disabled:opacity-50"
-//                                 title="Save"
-//                               >
-//                                 <Check className="w-5 h-5" />
-//                               </button>
-//                               <button
-//                                 onClick={handleCancelEdit}
-//                                 disabled={loading}
-//                                 className="text-red-600 hover:text-red-800 disabled:opacity-50"
-//                                 title="Cancel"
-//                               >
-//                                 <X className="w-5 h-5" />
-//                               </button>
-//                             </div>
-//                           </td>
-//                         </>
-//                       ) : (
-//                         <>
-//                           <td className="p-3 font-medium text-gray-900">{teacher.name}</td>
-//                           <td className="p-3 text-gray-600">{teacher.email}</td>
-//                           <td className="p-3">{teacher.className}</td>
-//                           <td className="p-3">{teacher.section}</td>
-//                           <td className="p-3">
-//                             <div className="flex gap-2">
-//                               <button
-//                                 onClick={() => handleEdit(teacher)}
-//                                 className="text-blue-600 hover:text-blue-800"
-//                                 title="Edit"
-//                               >
-//                                 <Edit className="w-5 h-5" />
-//                               </button>
-//                               <button
-//                                 onClick={() => handleDelete(teacher.id)}
-//                                 className="text-red-600 hover:text-red-800"
-//                                 title="Delete"
-//                               >
-//                                 <Trash2 className="w-5 h-5" />
-//                               </button>
-//                             </div>
-//                           </td>
-//                         </>
-//                       )}
-//                     </tr>
-//                   ))}
-//                 </tbody>
-//               </table>
-//             </div>
-//           )}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Teachers;
 import { useState, useEffect } from 'react';
 import { Edit, Trash2, Check, X, Loader2 } from 'lucide-react';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { firestore, auth } from '../../Firebase/Config';
 import { toast } from 'sonner';
+import Swal from 'sweetalert2';
 
 const Teachers = () => {
   const [formData, setFormData] = useState({
@@ -474,7 +30,6 @@ const Teachers = () => {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
 
-  // Fetch teachers and classes from Firestore
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -508,7 +63,6 @@ const Teachers = () => {
         }));
         setClasses(classesData);
 
-        // Note: Removed separate sections collection as sections are stored within classes
       } catch (err) {
         setError('Failed to fetch data. Please try again later.');
         console.error('Error fetching data:', err);
@@ -521,14 +75,12 @@ const Teachers = () => {
     fetchData();
   }, []);
 
-  // Get available sections for the selected class
   const getAvailableSections = (className) => {
     if (!className) return [];
     const selectedClass = classes.find((cls) => cls.name === className);
     return selectedClass ? selectedClass.sections : [];
   };
 
-  // Check for duplicate class and section assignment
   const isClassSectionTaken = (className, section, excludeTeacherId = null) => {
     return teachers.some(
       (teacher) =>
@@ -573,7 +125,6 @@ const Teachers = () => {
       return;
     }
 
-    // Validate class-section assignment
     const availableSections = getAvailableSections(className);
     if (!availableSections.includes(section)) {
       setError(`Section ${section} is not available for ${className}`);
@@ -595,10 +146,8 @@ const Teachers = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Update the user's displayName
       await updateProfile(user, { displayName: name });
 
-      // Add teacher data to Firestore
       const docRef = await addDoc(collection(firestore, 'teachers'), {
         uid: user.uid,
         name,
@@ -609,7 +158,6 @@ const Teachers = () => {
         createdAt: new Date().toISOString(),
       });
 
-      // Update local state
       setTeachers([
         {
           id: docRef.id,
@@ -726,23 +274,34 @@ const Teachers = () => {
     setError('');
   };
 
-  const handleDelete = async (teacherId) => {
-    if (window.confirm('Are you sure you want to delete this teacher?')) {
-      setLoading(true);
-      try {
-        await deleteDoc(doc(firestore, 'teachers', teacherId));
-        setTeachers(teachers.filter((teacher) => teacher.id !== teacherId));
-        setSuccess('Teacher deleted successfully!');
-        toast.success('Teacher deleted successfully');
-      } catch (err) {
-        setError(err.message || 'Failed to delete teacher. Please try again.');
-        toast.error(err.message || 'Failed to delete teacher');
-      } finally {
-        setLoading(false);
-        setTimeout(() => setSuccess(''), 3000);
-      }
+
+const handleDelete = async (teacherId) => {
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: 'Are you sure you want to delete this teacher?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, delete it!',
+    cancelButtonText: 'Cancel',
+  });
+
+  if (result.isConfirmed) {
+    setLoading(true);
+    try {
+      await deleteDoc(doc(firestore, 'teachers', teacherId));
+      setTeachers(teachers.filter((teacher) => teacher.id !== teacherId));
+      setSuccess('Teacher deleted successfully!');
+      toast.success('Teacher deleted successfully');
+    } catch (err) {
+      setError(err.message || 'Failed to delete teacher. Please try again.');
+      toast.error(err.message || 'Failed to delete teacher');
+    } finally {
+      setLoading(false);
+      setTimeout(() => setSuccess(''), 1000);
     }
-  };
+  }
+};
+
 
   return (
     <div className="space-y-6">

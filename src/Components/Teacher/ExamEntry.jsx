@@ -1,239 +1,14 @@
-// import { useState, useEffect } from 'react';
-// import { useParams, useNavigate } from 'react-router-dom';
-// import { Save, Plus, Trash2, X, Loader2 } from 'lucide-react';
-// import { motion } from 'framer-motion';
-// import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
-// import { firestore } from '../../Firebase/Config';
-// import { toast } from 'sonner';
-
-// const ExamEntry = () => {
-//   const { rollNo } = useParams();
-//   const navigate = useNavigate();
-
-//   const [selectedExam, setSelectedExam] = useState('');
-//   const [availableExams, setAvailableExams] = useState([]);
-//   const [subjects, setSubjects] = useState([]);
-//   const [scores, setScores] = useState({});
-//   const [loading, setLoading] = useState(true);
-//   const [saving, setSaving] = useState(false);
-//   const [error, setError] = useState('');
-
-//   // Fetch available exams from Firestore
-//   useEffect(() => {
-//     const fetchExams = async () => {
-//       try {
-//         const querySnapshot = await getDocs(collection(firestore, 'exams'));
-//         const examsData = querySnapshot.docs.map(doc => ({
-//           id: doc.id,
-//           ...doc.data()
-//         }));
-//         setAvailableExams(examsData);
-//         setLoading(false);
-//       } catch (err) {
-//         console.error('Error fetching exams: ', err);
-//         toast.error('Failed to load exams');
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchExams();
-//   }, []);
-
-//   // When exam is selected, populate subjects
-//   useEffect(() => {
-//     if (selectedExam) {
-//       const exam = availableExams.find(e => e.id === selectedExam);
-//       if (exam) {
-//         setSubjects(exam.subjects);
-//         // Initialize scores with empty values
-//         const initialScores = {};
-//         exam.subjects.forEach(subject => {
-//           initialScores[subject.name] = '';
-//         });
-//         setScores(initialScores);
-//       }
-//     } else {
-//       setSubjects([]);
-//       setScores({});
-//     }
-//   }, [selectedExam, availableExams]);
-
-//   const handleScoreChange = (subjectName, value) => {
-//     setScores(prev => ({
-//       ...prev,
-//       [subjectName]: value
-//     }));
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     setSaving(true);
-    
-//     if (!selectedExam) {
-//       setError('Please select an exam');
-//       setSaving(false);
-//       return;
-//     }
-
-//     // Validate scores
-//     for (const subject of subjects) {
-//       const score = scores[subject.name];
-//       if (!score ) {
-//         setError(`Please enter a valid score for ${subject.name}`);
-//         setSaving(false);
-//         return;
-//       }
-//       if (score < 0 || score > 100) {
-//         setError(`Score for ${subject.name} must be between 0 and 100`);
-//         setSaving(false);
-//         return;
-//       }
-//     }
-
-//     try {
-//       const examData = {
-//         examId: selectedExam,
-//         examName: availableExams.find(e => e.id === selectedExam).name,
-//         subjects: subjects.map(subject => ({
-//           name: subject.name,
-//           score: Number(scores[subject.name])
-//         })),
-//         date: new Date().toISOString()
-//       };
-
-//       // Save to student's exam results collection
-//       const studentExamRef = doc(firestore, 'students', rollNo, 'examResults', selectedExam);
-//       await setDoc(studentExamRef, examData);
-
-//       toast.success('Exam scores saved successfully!');
-//       navigate(`/teacher-dash`);
-//     } catch (err) {
-//       console.error('Error saving exam scores: ', err);
-//       setError('Failed to save exam scores. Please try again.');
-//       toast.error('Failed to save exam scores');
-//     } finally {
-//       setSaving(false);
-//     }
-//   };
-
-//   if (loading) {
-//     return (
-//       <div className="flex justify-center items-center min-h-screen ">
-//         {/* <div className="animate-spin rounded-full h-7 w-7 border-t-2 border-b-2 border-blue-500 z-50 "></div>  */}
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <motion.div
-//       initial={{ opacity: 0, x: 100 }}
-//       animate={{ opacity: 1, x: 0 }}
-//       exit={{ opacity: 0, y: 50 }}
-//       transition={{ duration: 0.5, ease: 'easeInOut' }}
-//       className="absolute w-full max-w-4xl mx-auto mt-18 p-6 bg-blue-50/60 backdrop-blur-md rounded-lg shadow-lg sm:relative"
-//     >
-//       {/* Top right Close/Back */}
-//       <button 
-//         onClick={() => navigate(-1)}
-//         className="absolute top-3 right-3 text-gray-600 hover:text-gray-800 transition-colors"
-//       > 
-//         <X className="w-6 h-6" />
-//       </button>
-
-//       <h2 className="text-xl font-semibold text-gray-800 mb-6">
-//         Enter Exam Scores for Roll No: <span className="text-blue-700">{rollNo}</span>
-//       </h2>
-
-//       <form onSubmit={handleSubmit} className="space-y-6">
-//         {/* Exam Selection */}
-//         <div>
-//           <label className="block text-sm font-medium text-gray-700 mb-1">
-//             Select Exam
-//           </label>
-//           <select
-//             value={selectedExam}
-//             onChange={(e) => setSelectedExam(e.target.value)}
-//             className="w-full p-2 rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
-//           >
-//             <option value="">-- Select an exam --</option>
-//             {availableExams.map((exam) => (
-//               <option key={exam.id} value={exam.id}>
-//                 {exam.name}
-//               </option>
-//             ))}
-//           </select>
-//         </div>
-
-//         {/* Subjects and Scores */}
-//         {selectedExam && (
-//           <div>
-//             <label className="block text-sm font-medium text-gray-700 mb-2">
-//               Enter Scores
-//             </label>
-//             <div className="space-y-3">
-//               {subjects.map((subject) => (
-//                 <div key={subject.name} className="grid grid-cols-12 gap-2 items-center">
-//                   <label className="col-span-5 sm:col-span-4 text-sm text-gray-700">
-//                     {subject.name}
-//                   </label>
-//                   <input
-//                     type="number"
-//                     value={scores[subject.name] || ''}
-//                     onChange={(e) => handleScoreChange(subject.name, e.target.value)}
-//                     placeholder="0-100"
-//                     min="0"
-//                     max="100"
-//                     className="col-span-5 sm:col-span-4 p-2 rounded-md border border-gray-300 text-sm"
-//                   />
-//                   <span className="col-span-2 sm:col-span-1 text-sm text-gray-500">
-//                     /100
-//                   </span>
-//                 </div>
-//               ))}
-//             </div>
-//           </div>
-//         )}
-
-//         {/* Error Message */}
-//         {error && (
-//           <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm">
-//             {error}
-//           </div>
-//         )}
-
-//         {/* Submit Button */}
-//         <button
-//           type="submit"
-//           disabled={!selectedExam || saving}
-//           className={`w-full h-10 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition flex items-center justify-center gap-2 ${
-//             !selectedExam || saving ? 'opacity-70 cursor-not-allowed' : ''
-//           }`}
-//         >
-//           {saving ? (
-//             <Loader2 className="w-5 h-5 animate-spin" />
-//           ) : (
-//             <>
-//               <Save className="w-5 h-5" /> Save Scores
-//             </>
-//           )}
-//         </button>
-//       </form>
-//     </motion.div>
-//   );
-// };
-
-// export default ExamEntry;
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, X, Loader2, Edit, Trash2, Check } from 'lucide-react';
+import { Save, X, Loader2, Edit, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { firestore } from '../../Firebase/Config';
 import { toast } from 'sonner';
+import Swal from 'sweetalert2';
 
 const ExamEntry = () => {
-  const { rollNo } = useParams();
+  const { regNo } = useParams();
   const navigate = useNavigate();
 
   const [selectedExam, setSelectedExam] = useState('');
@@ -242,12 +17,27 @@ const ExamEntry = () => {
   const [scores, setScores] = useState({});
   const [examResults, setExamResults] = useState([]);
   const [editingResultId, setEditingResultId] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingExams, setLoadingExams] = useState(true);
+  const [loadingResults, setLoadingResults] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [rollNoError, setRollNoError] = useState('');
+
+  // Validate rollNo
+  // useEffect(() => {
+  //   if (!rollNo || !/^[a-zA-Z0-9]{5,10}$/.test(rollNo)) {
+  //     setRollNoError('Invalid registration number. It should be 5-10 alphanumeric characters.');
+  //     setLoadingExams(false);
+  //     setLoadingResults(false);
+  //   }
+  // }, [rollNo]);
+
+  // Fetch exams and results
 
   useEffect(() => {
-    const fetchData = async () => {
+    if (rollNoError) return;
+
+    const fetchExams = async () => {
       try {
         const examsSnapshot = await getDocs(collection(firestore, 'exams'));
         const examsData = examsSnapshot.docs.map((doc) => ({
@@ -255,42 +45,54 @@ const ExamEntry = () => {
           ...doc.data(),
         }));
         setAvailableExams(examsData);
-
-        const resultsSnapshot = await getDocs(
-          collection(firestore, 'students', rollNo, 'examResults')
-        );
-        const resultsData = resultsSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          date: doc.data().date
-            ? new Date(
-                typeof doc.data().date === 'string'
-                  ? doc.data().date
-                  : doc.data().date.seconds * 1000
-              ).toLocaleDateString()
-            : 'N/A',
-        }));
-        setExamResults(resultsData.sort((a, b) => new Date(b.date) - new Date(a.date)));
-
-        setLoading(false);
+        setLoadingExams(false);
       } catch (err) {
-        console.error('Error fetching data: ', err);
-        toast.error('Failed to load data');
-        setError('Failed to load exams or results.');
-        setLoading(false);
+        console.error('Error fetching exams:', err);
+        toast.error('Failed to load exams');
+        setError('Failed to load exams.');
+        setLoadingExams(false);
       }
     };
 
-    fetchData();
-  }, [rollNo]);
+    const fetchResults = async () => {
+      try {
+        const resultsQuery = query(
+          collection(firestore, 'examMarks'),
+          where('regNo', '==', regNo)
+        );
+        const resultsSnapshot = await getDocs(resultsQuery);
+        const resultsData = resultsSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          date: doc.data().date ? new Date( typeof doc.data().date === 'string' ? doc.data().date : doc.data().date.seconds * 1000
+              ).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              })
+            : 'N/A',
+        }));
+        setExamResults(resultsData.sort((a, b) => new Date(b.date) - new Date(a.date)));
+        setLoadingResults(false);
+      } catch (err) {
+        console.error('Error fetching results:', err);
+        toast.error('Failed to load exam results');
+        setError('Failed to load exam results.');
+        setLoadingResults(false);
+      }
+    };
+
+    fetchExams();
+    fetchResults();
+  }, [regNo, rollNoError]);
 
   useEffect(() => {
     if (selectedExam && !editingResultId) {
       const exam = availableExams.find((e) => e.id === selectedExam);
       if (exam) {
-        setSubjects(exam.subjects);
+        setSubjects(exam.subjects || []);
         const initialScores = {};
-        exam.subjects.forEach((subject) => {
+        (exam.subjects || []).forEach((subject) => {
           initialScores[subject.name] = '';
         });
         setScores(initialScores);
@@ -302,10 +104,12 @@ const ExamEntry = () => {
   }, [selectedExam, availableExams, editingResultId]);
 
   const handleScoreChange = (subjectName, value) => {
-    setScores((prev) => ({
-      ...prev,
-      [subjectName]: value,
-    }));
+    if (value === '' || (/^\d*$/.test(value) && Number(value) <= 100)) {
+      setScores((prev) => ({
+        ...prev,
+        [subjectName]: value,
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -326,7 +130,7 @@ const ExamEntry = () => {
         setSaving(false);
         return;
       }
-      if (isNaN(score) || score < 0 || score > 100) {
+      if ( score < 0 || score > 100) {
         setError(`Score for ${subject.name} must be between 0 and 100`);
         setSaving(false);
         return;
@@ -335,9 +139,17 @@ const ExamEntry = () => {
 
     try {
       const exam = availableExams.find((e) => e.id === selectedExam);
+      if (!exam) {
+        setError('Selected exam not found.');
+        setSaving(false);
+        return;
+      }
+
+      const markId = `${selectedExam}_${regNo}`;
       const examData = {
         examId: selectedExam,
         examName: exam.name,
+        regNo: regNo,
         subjects: subjects.map((subject) => ({
           name: subject.name,
           score: Number(scores[subject.name]),
@@ -345,21 +157,28 @@ const ExamEntry = () => {
         date: new Date().toISOString(),
       };
 
-      const studentExamRef = doc(firestore, 'students', rollNo, 'examResults', selectedExam);
-      await setDoc(studentExamRef, examData, { merge: true });
+      await setDoc(doc(firestore, 'examMarks', markId), examData, { merge: true });
 
       if (editingResultId) {
         setExamResults((prev) =>
           prev.map((result) =>
-            result.id === selectedExam
-              ? { ...examData, id: selectedExam, date: new Date().toLocaleDateString() }
+            result.id === markId
+              ? { ...examData, id: markId, date: new Date().toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                }) }
               : result
           )
         );
         setEditingResultId(null);
       } else {
         setExamResults((prev) => [
-          { ...examData, id: selectedExam, date: new Date().toLocaleDateString() },
+          { ...examData, id: markId, date: new Date().toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            }) },
           ...prev,
         ]);
       }
@@ -369,7 +188,7 @@ const ExamEntry = () => {
       setSubjects([]);
       setScores({});
     } catch (err) {
-      console.error('Error saving exam scores: ', err);
+      console.error('Error saving exam scores:', err);
       setError('Failed to save exam scores. Please try again.');
       toast.error('Failed to save exam scores');
     } finally {
@@ -389,18 +208,27 @@ const ExamEntry = () => {
     document.getElementById('exam-form')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleDelete = async (examId) => {
-    if (window.confirm('Are you sure you want to delete these exam scores?')) {
-      try {
-        await deleteDoc(doc(firestore, 'students', rollNo, 'examResults', examId));
-        setExamResults((prev) => prev.filter((result) => result.id !== examId));
-        toast.success('Exam scores deleted successfully');
-      } catch (err) {
-        console.error('Error deleting exam scores: ', err);
-        toast.error('Failed to delete exam scores');
-      }
+const handleDelete = async (markId) => {
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: 'Are you sure you want to delete these exam scores?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, delete it!',
+    cancelButtonText: 'Cancel',
+  });
+
+  if (result.isConfirmed) {
+    try {
+      await deleteDoc(doc(firestore, 'examMarks', markId));
+      setExamResults((prev) => prev.filter((result) => result.id !== markId));
+      toast.success('Exam scores deleted successfully');
+    } catch (err) {
+      console.error('Error deleting exam scores:', err);
+      toast.error('Failed to delete exam scores');
     }
-  };
+  }
+};
 
   const handleCancelEdit = () => {
     setEditingResultId(null);
@@ -410,10 +238,18 @@ const ExamEntry = () => {
     setError('');
   };
 
-  if (loading) {
+  if (rollNoError) {
     return (
-      <div className="flex justify-center items-center min-h-screen w-fu">
-        {/* <div className="animate-spin rounded-full h-7 w-7 border-t-2 border-b-2 border-blue-500"></div>  */}
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="p-6 bg-red-100 text-red-700 rounded-lg">
+          {rollNoError}
+          <button
+            onClick={() => navigate('/teacher-dash')}
+            className="mt-4 text-blue-600 hover:underline"
+          >
+            Back to Dashboard
+          </button>
+        </div>
       </div>
     );
   }
@@ -434,7 +270,7 @@ const ExamEntry = () => {
       </button>
 
       <h2 className="text-xl font-semibold text-gray-800 mb-6">
-        Enter Exam Scores for Reg No: <span className="text-blue-700">{rollNo}</span>
+        Enter Exam Scores for Reg No: <span className="text-blue-700">{regNo}</span>
       </h2>
 
       <div id="exam-form" className="mb-8">
@@ -446,17 +282,25 @@ const ExamEntry = () => {
             <select
               value={selectedExam}
               onChange={(e) => setSelectedExam(e.target.value)}
-              disabled={editingResultId !== null}
+              disabled={editingResultId !== null || loadingExams}
               className="w-full p-2 rounded-md border border-gray-300 shadow-sm focus:ring-[#3D4577] focus:border-[#3D4577] text-sm disabled:opacity-50"
             >
               <option value="">-- Select an exam --</option>
-              {availableExams
-                .filter((exam) => !examResults.some((result) => result.examId === exam.id) || exam.id === editingResultId)
-                .map((exam) => (
-                  <option key={exam.id} value={exam.id}>
-                    {exam.name}
-                  </option>
-                ))}
+              {loadingExams ? (
+                <option disabled>Loading exams...</option>
+              ) : (
+                availableExams
+                  .filter(
+                    (exam) =>
+                      !examResults.some((result) => result.examId === exam.id) ||
+                      exam.id === editingResultId
+                  )
+                  .map((exam) => (
+                    <option key={exam.id} value={exam.id}>
+                      {exam.name}
+                    </option>
+                  ))
+              )}
             </select>
           </div>
 
@@ -478,7 +322,7 @@ const ExamEntry = () => {
                       placeholder="0-100"
                       min="0"
                       max="100"
-                      className="col-span-5 sm:col-span-4 p-2 rounded-md border border-gray-300 text-sm"
+                      className="col-span-5 sm:col-span-4 p-2 rounded-md border border-gray-300 text-sm focus:ring-[#3D4577] focus:border-[#3D4577]"
                     />
                     <span className="col-span-2 sm:col-span-1 text-sm text-gray-500">
                       /100
@@ -490,7 +334,7 @@ const ExamEntry = () => {
           )}
 
           {error && (
-            <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm">
+            <div className="p-3 bg-red-100 text-red-700 javax.xml.transform.dom.DOMResult-md text-sm">
               {error}
             </div>
           )}
@@ -498,9 +342,9 @@ const ExamEntry = () => {
           <div className="flex gap-3">
             <button
               type="submit"
-              disabled={!selectedExam || saving}
-              className={`flex-1 h-10 bg-[#3D4577] text-white font-semibold rounded-md shadow-md hover:bg-[#3d4577a6] transition flex items-center justify-center gap-2 ${
-                !selectedExam || saving ? 'opacity-70 cursor-not-allowed' : ''
+              disabled={!selectedExam || saving || loadingExams}
+              className={`flex-1 h-10 bg-[#3D4577] text-white font-semibold rounded-md shadow-md hover:bg-[#3d4577d7] transition flex items-center justify-center gap-2 ${
+                !selectedExam || saving || loadingExams ? 'opacity-70 cursor-not-allowed' : ''
               }`}
             >
               {saving ? (
@@ -527,7 +371,11 @@ const ExamEntry = () => {
       <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200">
         <div className="p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Exam Results</h2>
-          {examResults.length === 0 ? (
+          {loadingResults ? (
+            <div className="flex justify-center items-center py-6">
+              <Loader2 className="w-7 h-7 animate-spin text-blue-500" />
+            </div>
+          ) : examResults.length === 0 ? (
             <p className="text-gray-500">No exam results recorded for this student.</p>
           ) : (
             <div className="overflow-x-auto">

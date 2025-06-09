@@ -38,7 +38,7 @@ function App() {
               </Route>
 
               <Route path='/teacher-dash' element={<TeacherDashboard/>} >
-              <Route path="exam-entry/:rollNo" element={<ExamEntry />} />
+              <Route path="exam-entry/:regNo" element={<ExamEntry />} />
               </Route>
 
         </Routes>

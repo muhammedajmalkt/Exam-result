@@ -1,574 +1,10 @@
-// import { useState, useMemo, useRef, useEffect } from 'react';
-// import { usePapaParse } from 'react-papaparse';
-// import { Search, Filter, Users, User, Hash, BookOpenText, Bookmark, FileX, Edit, Trash2, Check, X, Loader2 } from 'lucide-react';
-// import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc } from 'firebase/firestore';
-// import { firestore } from '../../Firebase/Config'; 
-
-// const Students = () => {
-//   const { readString } = usePapaParse();
-//   const fileInputRef = useRef(null);
-
-//   const [student, setStudent] = useState({
-//     name: '',
-//     regNo: '',
-//     className: '',
-//     section: '',
-//     rollNo: '',
-//   });
-
-//   const [students, setStudents] = useState([]);
-//   const [error, setError] = useState('');
-//   const [success, setSuccess] = useState('');
-//   const [searchTerm, setSearchTerm] = useState('');
-//   const [filterClass, setFilterClass] = useState('all');
-//   const [filterSection, setFilterSection] = useState('all');
-//   const [editingId, setEditingId] = useState(null);
-//   const [editFormData, setEditFormData] = useState({
-//     name: '',
-//     regNo: '',
-//     className: '',
-//     section: '',
-//     rollNo: '',
-//   });
-//   const [loading, setLoading] = useState(true);
-
-//   // Fetch students from Firestore on component mount
-//   useEffect(() => {
-//     const fetchStudents = async () => {
-//       try {
-//         const querySnapshot = await getDocs(collection(firestore, 'students'));
-//         const studentsData = [];
-//         querySnapshot.forEach((doc) => {
-//           studentsData.push({ id: doc.id, ...doc.data() });
-//         });
-//         setStudents(studentsData);
-//         setLoading(false);
-//       } catch (err) {
-//         console.error('Error fetching students: ', err);
-//         setError('Failed to load students');
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchStudents();
-//   }, []);
-
-//   // Get unique classes and sections for filter dropdowns
-//   const uniqueClasses = useMemo(() => {
-//     const classes = students.map(s => s.className);
-//     return ['all', ...new Set(classes)];
-//   }, [students]);
-
-//   const uniqueSections = useMemo(() => {
-//     const sections = students.map(s => s.section);
-//     return ['all', ...new Set(sections)];
-//   }, [students]);
-
-//   // Filter students based on search term and filters
-//   const filteredStudents = useMemo(() => {
-//     return students.filter(student => {
-//       // Search term filter
-//       const matchesSearch =
-//         student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//         student.regNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//         student.className.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//         student.section.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//         student.rollNo.toString().includes(searchTerm);
-
-//       // Class filter
-//       const matchesClass = filterClass === 'all' || student.className === filterClass;
-
-//       // Section filter
-//       const matchesSection = filterSection === 'all' || student.section === filterSection;
-
-//       return matchesSearch && matchesClass && matchesSection;
-//     });
-//   }, [students, searchTerm, filterClass, filterSection]);
-
-//   const handleChange = (e) => {
-//     const { name, value } = e.target;
-//     setStudent((prev) => ({ ...prev, [name]: value }));
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     const { name, regNo, className, section, rollNo } = student;
-
-//     if (!name.trim() || name.trim().length < 3) return setError('Name must be at least 3 characters.');
-//     if (!regNo.trim()) return setError('Registration number is required.');
-//     if (!className.trim()) return setError('Class is required.');
-//     if (!section.trim()) return setError('Section is required.');
-//     if (!rollNo.trim() || isNaN(rollNo) || rollNo <= 0) return setError('Valid roll number is required.');
-
-//     try {
-//       // Check if student with same regNo already exists
-//       const exists = students.some(s => s.regNo === regNo);
-//       if (exists) {
-//         setError('Student with this registration number already exists');
-//         return;
-//       }
-
-//       // Add to Firestore
-//       const docRef = await addDoc(collection(firestore, 'students'), student);
-      
-//       // Update local state
-//       setStudents((prev) => [...prev, { id: docRef.id, ...student }]);
-//       setSuccess('Student added successfully!');
-//       setError('');
-//       setStudent({ name: '', regNo: '', className: '', section: '', rollNo: '' });
-//       setTimeout(() => setSuccess(''), 3000);
-//     } catch (err) {
-//       console.error('Error adding student: ', err);
-//       setError('Failed to add student');
-//     }
-//   };
-
-//   const handleCSVUpload = async (e) => {
-//     const file = e.target.files[0];
-//     if (!file) return;
-
-//     const reader = new FileReader();
-//     reader.onload = async ({ target }) => {
-//       readString(target.result, {
-//         header: true,
-//         skipEmptyLines: true,
-//         complete: async (results) => {
-//           const parsed = results.data.map((row) => ({
-//             name: row.name?.trim(),
-//             regNo: row.regNo?.trim(),
-//             className: row.className?.trim(),
-//             section: row.section?.trim(),
-//             rollNo: Number(row.rollNo),
-//           }));
-
-//           const isValid = parsed.every(
-//             (s) =>
-//               s.name &&
-//               s.regNo &&
-//               s.className &&
-//               s.section &&
-//               !isNaN(s.rollNo) &&
-//               s.rollNo > 0
-//           );
-
-//           if (!isValid) {
-//             setError('CSV contains invalid or missing values.');
-//             setSuccess('');
-//             if (fileInputRef.current) fileInputRef.current.value = null;
-//             return;
-//           }
-
-//           try {
-//             // Check for duplicates
-//             const existingRegNos = students.map(s => s.regNo);
-//             const duplicates = parsed.filter(s => existingRegNos.includes(s.regNo));
-            
-//             if (duplicates.length > 0) {
-//               setError(`Skipped ${duplicates.length} duplicate students (matching registration numbers)`);
-//               // Filter out duplicates
-//               parsed = parsed.filter(s => !existingRegNos.includes(s.regNo));
-              
-//               if (parsed.length === 0) {
-//                 if (fileInputRef.current) fileInputRef.current.value = null;
-//                 return;
-//               }
-//             }
-
-//             // Add to Firestore in batch
-//             const batch = [];
-//             const newStudents = [];
-            
-//             for (const student of parsed) {
-//               const docRef = await addDoc(collection(firestore, 'students'), student);
-//               newStudents.push({ id: docRef.id, ...student });
-//             }
-
-//             // Update local state
-//             setStudents((prev) => [...prev, ...newStudents]);
-//             setSuccess(`${parsed.length} students imported from CSV successfully!`);
-//             setError('');
-//             setTimeout(() => setSuccess(''), 3000);
-//           } catch (err) {
-//             console.error('Error importing students: ', err);
-//             setError('Failed to import students');
-//           }
-
-//           if (fileInputRef.current) fileInputRef.current.value = null;
-//         },
-//         error: () => {
-//           setError('Error parsing CSV file.');
-//           setSuccess('');
-//           if (fileInputRef.current) fileInputRef.current.value = null;
-//         },
-//       });
-//     };
-
-//     reader.readAsText(file);
-//   };
-
-//   const handleEdit = (student) => {
-//     setEditingId(student.id);
-//     setEditFormData({
-//       name: student.name,
-//       regNo: student.regNo,
-//       className: student.className,
-//       section: student.section,
-//       rollNo: student.rollNo,
-//     });
-//   };
-
-//   const handleEditChange = (e) => {
-//     const { name, value } = e.target;
-//     setEditFormData(prev => ({ ...prev, [name]: value }));
-//   };
-
-//   const handleUpdate = async () => {
-//     const { name, regNo, className, section, rollNo } = editFormData;
-
-//     if (!name.trim() || name.trim().length < 3) return setError('Name must be at least 3 characters.');
-//     if (!regNo.trim()) return setError('Registration number is required.');
-//     if (!className.trim()) return setError('Class is required.');
-//     if (!section.trim()) return setError('Section is required.');
-//     if (!rollNo.trim() || isNaN(rollNo) || rollNo <= 0) return setError('Valid roll number is required.');
-
-//     try {
-//       // Check if another student with the same regNo exists (excluding the current one)
-//       const exists = students.some(s => s.regNo === regNo && s.id !== editingId);
-//       if (exists) {
-//         setError('Another student with this registration number already exists');
-//         return;
-//       }
-
-//       // Update in Firestore
-//       await updateDoc(doc(firestore, 'students', editingId), editFormData);
-      
-//       // Update local state
-//       setStudents(students.map(student => 
-//         student.id === editingId ? { ...student, ...editFormData } : student
-//       ));
-//       setSuccess('Student updated successfully!');
-//       setError('');
-//       setEditingId(null);
-//       setTimeout(() => setSuccess(''), 3000);
-//     } catch (err) {
-//       console.error('Error updating student: ', err);
-//       setError('Failed to update student');
-//     }
-//   };
-
-//   const handleCancelEdit = () => {
-//     setEditingId(null);
-//   };
-
-//   const handleDelete = async (id) => {
-//     if (window.confirm('Are you sure you want to delete this student?')) {
-//       try {
-//         // Delete from Firestore
-//         await deleteDoc(doc(firestore, 'students', id));
-        
-//         // Update local state
-//         setStudents(students.filter(student => student.id !== id));
-//         setSuccess('Student deleted successfully!');
-//         setTimeout(() => setSuccess(''), 3000);
-//       } catch (err) {
-//         console.error('Error deleting student: ', err);
-//         setError('Failed to delete student');
-//       }
-//     }
-//   };
-
-//   if (loading) {
-//     return (
-//       <div className="flex  justify-center  items-center min-h-screen">   <div className="animate-spin rounded-full h-7 w-7 border-t-2 border-b-2 border-blue-500"></div>
-//        </div>
-//     );
-//   }
-
-//   return (
-//     <div className="space-y-6">
-//       {/* Add Student Form */}
-//       <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-300 p-6 animate-in slide-in-from-right duration-500">
-//         <h2 className="text-xl font-semibold text-gray-800 mb-4">Add Student</h2>
-
-//         {/* CSV Upload */}
-//         <div className="mb-4">
-//           <label className="block mb-1 text-sm font-medium text-gray-700">Import CSV File</label>
-//           <input
-//             type="file"
-//             accept=".csv"
-//             ref={fileInputRef}
-//             onChange={handleCSVUpload}
-//             className="text-sm border border-gray-300 w-fit p-2 rounded-lg"
-//           />
-//           <p className="text-xs text-gray-500 mt-1">CSV should have columns: name, regNo, className, section, rollNo</p>
-//         </div>
-
-//         <form onSubmit={handleSubmit} className="space-y-4">
-//           {['name', 'regNo', 'className', 'section', 'rollNo'].map((field, i) => (
-//             <div key={i}>
-//               <label className="block text-sm font-medium text-gray-700 capitalize">{field}</label>
-//               <input
-//                 type={field === 'rollNo' ? 'number' : 'text'}
-//                 name={field}
-//                 value={student[field]}
-//                 onChange={handleChange}
-//                 placeholder={`Enter ${field}`}
-//                 className="mt-1 block w-full h-10 p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
-//               />
-//             </div>
-//           ))}
-//           {error && <p className="text-red-500 text-sm">{error}</p>}
-//           {success && <p className="text-green-500 text-sm">{success}</p>}
-//           <button
-//             type="submit"
-//             className="w-full h-10  bg-[#3D4577] hover:bg-[#3d4577e5] text-white font-md rounded-lg transition-all duration-300"
-//           >
-//             Add Student
-//           </button>
-//         </form>
-//       </div>
-
-//       {/* Students List */}
-//       <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 lg:mt-20">
-//         <div className="bg-gradient-to-r text-gray-700 rounded-t-lg px-6 py-4">
-//           <h2 className="text-xl font-semibold flex items-center gap-2">
-//             <Users className="w-5 h-5" />
-//             Students List ({filteredStudents.length})
-//           </h2>
-//         </div>
-//         <div className="p-6">
-//           {students.length > 0 ? (
-//             <>
-//               {/* Search and Filter Controls - Single Line */}
-//               <div className="mb-6 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-//                 <div className="relative w-full sm:w-auto sm:flex-1">
-//                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-//                   <input
-//                     type="text"
-//                     placeholder="Search students..."
-//                     value={searchTerm}
-//                     onChange={(e) => setSearchTerm(e.target.value)}
-//                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-//                   />
-//                 </div>
-
-//                 <div className="flex lg:flex-wrap gap-2 items-center w-full sm:w-auto">
-//                   <div className="flex items-center gap-2 text-sm text-gray-600">
-//                     <Filter className="w-4 h-4" />
-//                     <span>Filter:</span>
-//                   </div>
-
-//                   <select
-//                     value={filterClass}
-//                     onChange={(e) => setFilterClass(e.target.value)}
-//                     className="text-sm px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-//                   >
-//                     {uniqueClasses.map((className) => (
-//                       <option key={className} value={className}>
-//                         {className === 'all' ? 'All Classes' : className}
-//                       </option>
-//                     ))}
-//                   </select>
-
-//                   <select
-//                     value={filterSection}
-//                     onChange={(e) => setFilterSection(e.target.value)}
-//                     className="text-sm px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-500 focus:border-blue-500"
-//                   >
-//                     {uniqueSections.map((section) => (
-//                       <option key={section} value={section} className='bg-white'>
-//                         {section === 'all' ? 'All Sections' : section}
-//                       </option>
-//                     ))}
-//                   </select>
-
-//                   {(searchTerm || filterClass !== "all" || filterSection !== "all") && (
-//                     <button
-//                       onClick={() => {
-//                         setSearchTerm("");
-//                         setFilterClass("all");
-//                         setFilterSection("all");
-//                       }}
-//                       className="flex items-center gap-1 text-sm px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-//                     >
-//                       <FileX className="w-4 h-4" />
-//                       Clear
-//                     </button>
-//                   )}
-//                 </div>
-//               </div>
-
-//               {/* Students Table */}
-//               <div className="overflow-x-auto rounded-lg border border-gray-200">
-//                 <table className="w-full text-sm">
-//                   <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
-//                     <tr>
-//                       <th className="px-4 py-3 text-left font-semibold text-gray-700 border-b">
-//                         <div className="flex items-center gap-1">
-//                           <Hash className="w-4 h-4" />
-//                           Reg No
-//                         </div>
-//                       </th>
-//                       <th className="px-4 py-3 text-left font-semibold text-gray-700 border-b">
-//                         <div className="flex items-center gap-1">
-//                           <User className="w-4 h-4" />
-//                           Name
-//                         </div>
-//                       </th>
-//                       <th className="px-4 py-3 text-left font-semibold text-gray-700 border-b">
-//                         <div className="flex items-center gap-1">
-//                           <BookOpenText className="w-4 h-4" />
-//                           Class
-//                         </div>
-//                       </th>
-//                       <th className="px-4 py-3 text-left font-semibold text-gray-700 border-b">
-//                         <div className="flex items-center gap-1">
-//                           <Bookmark className="w-4 h-4" />
-//                           Section
-//                         </div>
-//                       </th>
-//                       <th className="px-4 py-3 text-left font-semibold text-gray-700 border-b">
-//                         <div className="flex items-center gap-1">
-//                           <Hash className="w-4 h-4" />
-//                           Roll No
-//                         </div>
-//                       </th>
-//                       <th className="px-4 py-3 text-left font-semibold text-gray-700 border-b">Actions</th>
-//                     </tr>
-//                   </thead>
-//                   <tbody className="bg-white ">
-//                     {filteredStudents.map((student) => (
-//                       <tr key={student.id} className={` transition-colors border-b border-gray-100 ${editingId === student.id ? "bg-blue-50 " : "hover:bg-gray-50"} `}>
-//                         {editingId === student.id ? (
-//                           <>
-//                             <td className="px-4 py-3 text-gray-600">
-//                               <input
-//                                 type="text"
-//                                 name="regNo"
-//                                 value={editFormData.regNo}
-//                                 onChange={handleEditChange}
-//                                 className="w-full p-1 border-gray-400 border rounded"
-//                               />
-//                             </td>
-//                             <td className="px-4 py-3">
-//                               <input
-//                                 type="text"
-//                                 name="name"
-//                                 value={editFormData.name}
-//                                 onChange={handleEditChange}
-//                                 className="w-full p-1 border-gray-400 border rounded"
-//                               />
-//                             </td>
-//                             <td className="px-4 py-3">
-//                               <input
-//                                 type="text"
-//                                 name="className"
-//                                 value={editFormData.className}
-//                                 onChange={handleEditChange}
-//                                 className="w-full p-1 border-gray-400 border rounded"
-//                               />
-//                             </td>
-//                             <td className="px-4 py-3">
-//                               <input
-//                                 type="text"
-//                                 name="section"
-//                                 value={editFormData.section}
-//                                 onChange={handleEditChange}
-//                                 className="w-full p-1 border border-gray-400 rounded"
-//                               />
-//                             </td>
-//                             <td className="px-4 py-3">
-//                               <input
-//                                 type="number"
-//                                 name="rollNo"
-//                                 value={editFormData.rollNo}
-//                                 onChange={handleEditChange}
-//                                 className="w-full p-1 border border-gray-400 rounded"
-//                               />
-//                             </td>
-//                             <td className="px-4 py-3 flex gap-2">
-//                               <button
-//                                 onClick={handleUpdate}
-//                                 className="p-1 text-green-600 hover:text-green-800"
-//                                 title="Save"
-//                               >
-//                                 <Check className="w-4 h-4" />
-//                               </button>
-//                               <button
-//                                 onClick={handleCancelEdit}
-//                                 className="p-1 text-red-600 hover:text-red-800"
-//                                 title="Cancel"
-//                               >
-//                                 <X className="w-4 h-4" />
-//                               </button>
-//                             </td>
-//                           </>
-//                         ) : (
-//                           <>
-//                             <td className="px-4 py-3 text-gray-600">{student.regNo}</td>
-//                             <td className="px-4 py-3 font-medium text-gray-900">{student.name}</td>
-//                             <td className="px-4 py-3">
-//                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-//                                 {student.className}
-//                               </span>
-//                             </td>
-//                             <td className="px-4 py-3">
-//                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-purple-200 text-purple-700">
-//                                 {student.section}
-//                               </span>
-//                             </td>
-//                             <td className="px-4 py-3 font-mono text-gray-600">{student.rollNo}</td>
-//                             <td className="px-4 py-3 flex gap-2">
-//                               <button
-//                                 onClick={() => handleEdit(student)}
-//                                 className="p-1 text-blue-600 hover:text-blue-800"
-//                                 title="Edit"
-//                               >
-//                                 <Edit className="w-4 h-4" />
-//                               </button>
-//                               <button
-//                                 onClick={() => handleDelete(student.id)}
-//                                 className="p-1 text-red-600 hover:text-red-800"
-//                                 title="Delete"
-//                               >
-//                                 <Trash2 className="w-4 h-4" />
-//                               </button>
-//                             </td>
-//                           </>
-//                         )}
-//                       </tr>
-//                     ))}
-//                   </tbody>
-//                 </table>
-//               </div>
-
-//               {filteredStudents.length === 0 && (
-//                 <div className="text-center py-8">
-//                   <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-//                   <p className="text-gray-500">No students found matching your search criteria.</p>
-//                 </div>
-//               )}
-//             </>
-//           ) : (
-//             <div className="text-center py-12">
-//               <Users className="w-10 h-10 text-gray-400 mx-auto mb-4" />
-//               <h3 className="text-lg font-medium text-gray-900 mb-2">No students added yet</h3>
-//               <p className="text-gray-500">Start by adding your first student using the form above.</p>
-//             </div>
-//           )}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Students;
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { usePapaParse } from 'react-papaparse';
 import { Search, Filter, Users, User, Hash, BookOpenText, Bookmark, FileX, Edit, Trash2, Check, X, Download, Upload } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc, query, where } from 'firebase/firestore';
 import { firestore } from '../../Firebase/Config'; 
 import { toast } from 'sonner';
+import Swal from 'sweetalert2';
 
 const Students = () => {
   const { readString } = usePapaParse();
@@ -604,12 +40,10 @@ const Students = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch students
         const studentsSnapshot = await getDocs(collection(firestore, 'students'));
         const studentsData = studentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setStudents(studentsData);
 
-        // Fetch classes with their sections
         const classesSnapshot = await getDocs(collection(firestore, 'classes'));
         const classesData = classesSnapshot.docs.map(doc => doc.data());
         setClasses(classesData);
@@ -626,14 +60,12 @@ const Students = () => {
     fetchData();
   }, []);
 
-  // Get available sections for the selected class
   const availableSections = useMemo(() => {
     if (!student.className) return [];
     const selectedClass = classes.find(c => c.name === student.className);
     return selectedClass ? selectedClass.sections : [];
   }, [student.className, classes]);
 
-  // Get unique classes and sections for filter dropdowns
   const uniqueClasses = useMemo(() => {
     const classNames = students.map(s => s.className);
     return ['all', ...new Set(classNames)];
@@ -644,7 +76,6 @@ const Students = () => {
     return ['all', ...new Set(sections)];
   }, [students]);
 
-  // Filter students based on search term and filters
   const filteredStudents = useMemo(() => {
     return students.filter(student => {
       const matchesSearch =
@@ -701,7 +132,6 @@ const Students = () => {
     }
 
     try {
-      // Check if student with same regNo already exists
       const exists = students.some(s => s.regNo === regNo);
       if (exists) {
         setError('Student with this registration number already exists');
@@ -709,7 +139,6 @@ const Students = () => {
         return;
       }
 
-      // Validate class-section assignment
       const selectedClass = classes.find(c => c.name === className);
       if (!selectedClass || !selectedClass.sections.includes(section)) {
         setError(`Section ${section} is not available for ${className}`);
@@ -717,7 +146,6 @@ const Students = () => {
         return;
       }
 
-      // Add to Firestore
       const docRef = await addDoc(collection(firestore, 'students'), {
         name: name.trim(),
         regNo: regNo.trim(),
@@ -744,12 +172,10 @@ const Students = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Reset messages and progress
     setError('');
     setSuccess('');
     setUploadProgress(0);
 
-    // Check file size (limit to 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setError('File size too large (max 5MB)');
       toast.error('File size too large (max 5MB)');
@@ -764,7 +190,6 @@ const Students = () => {
           header: true,
           skipEmptyLines: true,
           complete: async (results) => {
-            // Validate CSV structure
             const requiredColumns = ['name', 'regNo', 'className', 'section', 'rollNo'];
             const hasAllColumns = requiredColumns.every(col => 
               results.meta.fields.includes(col)
@@ -777,10 +202,8 @@ const Students = () => {
               return;
             }
 
-            // Parse and validate data
             let parsed = results.data
               .map((row, index) => {
-                // Clean and validate each row
                 const name = row.name?.toString().trim();
                 const regNo = row.regNo?.toString().trim();
                 const className = row.className?.toString().trim();
@@ -793,7 +216,7 @@ const Students = () => {
                   className,
                   section,
                   rollNo,
-                  rowNumber: index + 2, // +2 because header is row 1 and arrays are 0-based
+                  rowNumber: index + 2, 
                   isValid: !!name && name.length >= 3 &&
                           !!regNo &&
                           !!className &&
@@ -802,7 +225,6 @@ const Students = () => {
                 };
               });
 
-            // Check for invalid rows
             const invalidRows = parsed.filter(row => !row.isValid);
             if (invalidRows.length > 0) {
               setError(
@@ -814,10 +236,8 @@ const Students = () => {
               return;
             }
 
-            // Get existing registration numbers for duplicate check
             const existingRegNos = students.map(s => s.regNo);
             
-            // Check for duplicates in CSV
             const regNosInCSV = parsed.map(s => s.regNo);
             const duplicateInCSV = regNosInCSV.filter((regNo, index) => 
               regNosInCSV.indexOf(regNo) !== index
@@ -842,7 +262,6 @@ const Students = () => {
                 return;
               }
             }
-            // Validate class-section assignments
             const classSectionMap = {};
             classes.forEach(cls => {
               classSectionMap[cls.name] = cls.sections;
@@ -865,7 +284,7 @@ const Students = () => {
             // }
 
             // Prepare for batch upload
-            const batchSize = 500; // Firestore batch limit
+            const batchSize = 500; 
             const newStudents = [];
             let processed = 0;
             
@@ -893,7 +312,6 @@ const Students = () => {
               setUploadProgress(Math.round((processed / parsed.length) * 100));
             }
 
-            // Update state
             setStudents(prev => [...prev, ...newStudents]);
             setSuccess(
               `Successfully imported ${parsed.length} students! ` +
@@ -968,7 +386,6 @@ const Students = () => {
     }
 
     try {
-      // Check if another student with the same regNo exists (excluding the current one)
       const exists = students.some(s => s.regNo === regNo && s.id !== editingId);
       if (exists) {
         setError('Another student with this registration number already exists');
@@ -976,7 +393,6 @@ const Students = () => {
         return;
       }
 
-      // Validate class-section assignment
       const selectedClass = classes.find(c => c.name === className);
       if (!selectedClass || !selectedClass.sections.includes(section)) {
         setError(`Section ${section} is not available for ${className}`);
@@ -1013,24 +429,31 @@ const Students = () => {
     setEditingId(null);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this student?')) {
-      try {
-        // Delete from Firestore
-        await deleteDoc(doc(firestore, 'students', id));
-        
-        // Update local state
-        setStudents(students.filter(student => student.id !== id));
-        setSuccess('Student deleted successfully!');
-        toast.success('Student deleted successfully!');
-        setTimeout(() => setSuccess(''), 3000);
-      } catch (err) {
-        console.error('Error deleting student: ', err);
-        setError('Failed to delete student');
-        toast.error('Failed to delete student');
-      }
+
+const handleDelete = async (id) => {
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: 'Are you sure you want to delete this student?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, delete it!',
+    cancelButtonText: 'Cancel',
+  });
+
+  if (result.isConfirmed) {
+    try {
+      await deleteDoc(doc(firestore, 'students', id));
+      setStudents(students.filter(student => student.id !== id));
+      setSuccess('Student deleted successfully!');
+      toast.success('Student deleted successfully!');
+      setTimeout(() => setSuccess(''), 1000);
+    } catch (err) {
+      console.error('Error deleting student: ', err);
+      setError('Failed to delete student');
+      toast.error('Failed to delete student');
     }
-  };
+  }
+};
 
   const generateSampleCSV = () => {
     const csvContent = "data:text/csv;charset=utf-8," +
@@ -1230,7 +653,7 @@ const Students = () => {
                     onChange={(e) => setFilterClass(e.target.value)}
                     className="text-sm px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    {uniqueClasses.map((className) => (
+                    {uniqueClasses.sort((a, b) => b.localeCompare(a)).map((className) => (
                       <option key={className} value={className}>
                         {className === 'all' ? 'All Classes' : className}
                       </option>
@@ -1242,7 +665,7 @@ const Students = () => {
                     onChange={(e) => setFilterSection(e.target.value)}
                     className="text-sm px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-500 focus:border-blue-500"
                   >
-                    {uniqueSections.map((section) => (
+                    {uniqueSections.sort().map((section) => (
                       <option key={section} value={section} className='bg-white'>
                         {section === 'all' ? 'All Sections' : section}
                       </option>
@@ -1268,43 +691,43 @@ const Students = () => {
               {/* Students Table */}
               <div className="overflow-x-auto rounded-lg border border-gray-200">
                 <table className="w-full text-sm">
-                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                  <thead className="bg-[#3D4577]">
                     <tr>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-700 border-b">
+                      <th className="px-4 py-3 text-left font-semibold text-gray-300 border-b">
                         <div className="flex items-center gap-1">
                           <Hash className="w-4 h-4" />
                           Reg No
                         </div>
                       </th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-700 border-b">
+                      <th className="px-4 py-3 text-left font-semibold text-gray-300 border-b">
                         <div className="flex items-center gap-1">
                           <User className="w-4 h-4" />
                           Name
                         </div>
                       </th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-700 border-b">
+                      <th className="px-4 py-3 text-left font-semibold text-gray-300 border-b">
                         <div className="flex items-center gap-1">
                           <BookOpenText className="w-4 h-4" />
                           Class
                         </div>
                       </th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-700 border-b">
+                      <th className="px-4 py-3 text-left font-semibold text-gray-300 border-b">
                         <div className="flex items-center gap-1">
                           <Bookmark className="w-4 h-4" />
                           Section
                         </div>
                       </th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-700 border-b">
+                      <th className="px-4 py-3 text-left font-semibold text-gray-300 border-b">
                         <div className="flex items-center gap-1">
                           <Hash className="w-4 h-4" />
                           Roll No
                         </div>
                       </th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-700 border-b">Actions</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-300 border-b">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white ">
-                    {filteredStudents.map((student) => (
+                  <tbody className="bg-white ">                    
+                    {filteredStudents.sort((a,b)=>a.regNo-b.regNo).map((student) => (
                       <tr key={student.id} className={` transition-colors border-b border-gray-100 ${editingId === student.id ? "bg-blue-50 " : "hover:bg-gray-50"} `}>
                         {editingId === student.id ? (
                           <>

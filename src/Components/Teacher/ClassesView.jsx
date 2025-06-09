@@ -10,13 +10,11 @@ const ClassesView = () => {
     const [error, setError] = useState('');
 
     useEffect(() => {
-        // Listen for authentication state changes
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             console.log(user);
             
             if (user) {
                 try {
-                    // Fetch teacher data based on the logged-in user's UID
                     const teacherQuery = query(
                         collection(firestore, 'teachers'),
                         where('uid', '==', user.uid)
@@ -29,11 +27,9 @@ const ClassesView = () => {
                         return;
                     }
 
-                    // Assume the teacher is assigned to one class and section
                     const teacherData = teacherSnapshot.docs[0].data();
                     const { className, section } = teacherData;
 
-                    // Fetch students for the assigned class and section
                     const studentsQuery = query(
                         collection(firestore, 'students'),
                         where('className', '==', className),
@@ -54,7 +50,7 @@ const ClassesView = () => {
                         students: students.map((student) => ({
                             rollNo: student.rollNo,
                             name: student.name,
-                            regNo: student.regNo, // Include regNo if needed for routing
+                            regNo: student.regNo, 
                         })),
                     };
 
@@ -71,7 +67,6 @@ const ClassesView = () => {
             }
         });
 
-        // Cleanup subscription on unmount
         return () => unsubscribe();
     }, []);
 
@@ -111,12 +106,12 @@ const ClassesView = () => {
                         </h3>
                         </div>
                         <div className="space-y-1 flex items-center ">
-                            <p className=" font-medium text-gray-500">Teacher:</p>
-                            <p className="text-lg font-semibold text-[#3D4577] ml-1">{cls.teacher}</p>
+                            <p className="  text-gray-500">Teacher:</p>
+                            <p className=" text-[#3D4577] ml-1">{cls.teacher}</p>
                         </div>
                         <div className="space-y-1 flex items-center mb-4">
-                            <p className=" font-medium text-gray-500">Students:</p>
-                            <p className="text-lg font-semibold text-[#3D4577] ml-1">{cls.students.length}</p>
+                            <p className="  text-gray-500">Students:</p>
+                            <p className="  text-[#3D4577] ml-1">{cls.students.length}</p>
                         </div>
 
                         {cls.students.length === 0 ? (
@@ -131,24 +126,28 @@ const ClassesView = () => {
                                         >
                                             <th className="p-4 border-b border-r border-[#3D4577]">Roll No</th>
                                             <th className="p-4 border-b border-r border-[#3D4577]">Student Name</th>
+                                            <th className="p-4 border-b border-r border-[#3D4577]">Reg.No</th>
                                             <th className="p-4 border-b border-[#3D4577]">Action</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody >
                                         {cls.students.sort((a, b) => a.rollNo - b.rollNo).map((student) => (
                                             <tr
                                                 key={student.rollNo}
-                                                className="bg-cream-50 text-[#3D4577] text-sm hover:bg-[#3d457716] transition-colors duration-200"
+                                                className="bg-cream-50 text-[#3D4577] text-sm hover:bg-[#3d457716] transition-colors duration-200 text-center"
                                             >
                                                 <td className="p-4 border-b border-r border-[#3D4577]">
                                                     {student.rollNo}
                                                 </td>
-                                                <td className="p-4 border-b border-r border-[#3D4577]">
+                                                <td className="p-4 border-b border-r border-[#3D4577] ">
                                                     {student.name}
                                                 </td>
-                                                <td className="p-4 border-b border-[#3D4577] text-center">
+                                                <td className="p-4 border-b border-r border-[#3D4577] ">
+                                                    {student.regNo}
+                                                </td>
+                                                <td className="p-4 border-b border-[#3D4577]">
                                                     <Link
-                                                        to={`exam-entry/${student.rollNo}`} // Use regNo or another unique identifier
+                                                        to={`exam-entry/${student.regNo}`} 
                                                         className="text-[#3D4577] hover:text-blue-900 font-medium tracking-wide underline decoration-1 decoration-[#3D4577] hover:decoration-blue-950 transition-all duration-200"
                                                         style={{ fontFamily: "'Lora', serif" }}
                                                     >

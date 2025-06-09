@@ -1,12 +1,12 @@
 import { useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
-import { Award, Download, ArrowLeft } from 'lucide-react';
+import { Download, ArrowLeft } from 'lucide-react';
 import { Mycontext } from '../Context/Context';
 
 const Result = () => {
   const navigate = useNavigate();
-  const {result} = useContext(Mycontext)
+  const { result } = useContext(Mycontext);
 
   useEffect(() => {
     if (!result) {
@@ -14,7 +14,6 @@ const Result = () => {
     }
   }, [result, navigate]);
 
-  // Derive grades and enhance result
   const getGrade = (score) => {
     if (score >= 90) return 'A+';
     if (score >= 80) return 'A';
@@ -27,95 +26,157 @@ const Result = () => {
   const enhancedResult = result
     ? {
         ...result,
-        sex: result.sex || 'Unknown',
-        school: result.school || 'Unknown School',
-        subjects: Object.entries(result.marks).map(([subject, mark]) => ({
-          subject,
-          mark,
-          grade: getGrade(mark),
+        sex: result.studentData?.sex || 'Unknown',
+        school: result.studentData?.school || 'Unknown School',
+        subjects: result.marks.map(subject => ({
+          subject: subject.name,
+          mark: subject.score,
+          grade: getGrade(subject.score),
         })),
-        grade: result.grade || (result.percentage >= 90 ? 'A+' : result.percentage >= 80 ? 'A' : 'B'),
-        status: result.status || (result.percentage >= 50 ? 'Pass' : 'Fail'),
+        grade: result.percentage >= 90 ? 'A+' : result.percentage >= 80 ? 'A' : result.percentage >= 70 ? 'B' : result.percentage >= 60 ? 'C' : result.percentage >= 50 ? 'D' : 'F',
+        status: result.percentage >= 50 ? 'Pass' : 'Fail',
         resultStatus: result.percentage >= 50 ? 'ELIGIBLE FOR HIGHER STUDIES' : 'NOT ELIGIBLE',
       }
     : null;
 
-  // Dynamic color for grade
   const getGradeColor = (grade) => {
     switch (grade) {
-      case 'A+':
-        return 'text-green-600';
-      case 'A':
-        return 'text-blue-600';
-      case 'B':
-        return 'text-yellow-600';
-      default:
-        return 'text-gray-600';
+      case 'A+': return 'text-green-600';
+      case 'A': return 'text-blue-600';
+      case 'B': return 'text-yellow-600';
+      default: return 'text-gray-600';
     }
   };
 
-  // Dynamic color for status
   const getStatusColor = (status) => {
     return status === 'Pass' ? 'text-green-600' : 'text-red-600';
   };
 
   const downloadPDF = () => {
     if (!enhancedResult) return;
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text('Student Result', 20, 20);
-    doc.setFontSize(12);
-    // doc.text(`ID: ${enhancedResult._id || 'N/A'}`, 20, 30);
-    doc.text(`Reg No: ${enhancedResult.regNo}`, 20, 40);
-    doc.text(`Name: ${enhancedResult.studentName}`, 20, 50);
-    doc.text(`Sex: ${enhancedResult.sex}`, 20, 60);
-    // doc.text(`School: ${enhancedResult.school}`, 20, 70);
-    doc.text(`Exam: ${enhancedResult.examName}`, 20, 80);
-    doc.text('Subject-wise Results:', 20, 90);
-    // Table headers
-    doc.text('Subject', 20, 100);
-    doc.text('Marks', 120, 100);
-    doc.text('Grade', 160, 100);
-    doc.line(20, 102, 190, 102); // Horizontal line
-    let y = 110;
-    // Table rows
-    enhancedResult.subjects.forEach(({ subject, mark, grade }) => {
-      doc.text(subject, 20, y);
-      doc.text(`${mark}/100`, 120, y);
-      doc.text(grade, 160, y);
-      y += 10;
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
     });
-    doc.line(20, y - 8, 190, y - 8); // Bottom line
-    doc.text(`Total: ${enhancedResult.total}/300`, 20, y + 10);
-    doc.text(`Percentage: ${enhancedResult.percentage}%`, 20, y + 20);
-    doc.text(`Overall Grade: ${enhancedResult.grade}`, 20, y + 30);
-    doc.text(`Status: ${enhancedResult.status}`, 20, y + 40);
-    doc.text(`Result: ${enhancedResult.resultStatus}`, 20, y + 50);
+
+    const primaryColor = '#1E3A8A'; 
+    const accentColor = '#D97706';
+    const headerBgColor = '#DBEAFE';
+    const rowBgColor = '#F9FAFB'; 
+    const textColor = '#111827'; 
+
+    doc.setFont('helvetica', 'bold');
+
+    // Header
+    doc.setFillColor(primaryColor);
+    doc.rect(0, 0, 210, 20, 'F'); 
+    doc.setTextColor('#FFFFFF');
+    doc.setFontSize(18);
+    doc.text('Examination Result Certificate', 105, 12, { align: 'center' });
+
+    // Subheader
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(accentColor);
+    doc.setFontSize(12);
+    doc.text('Official Academic Transcript', 105, 18, { align: 'center' });
+
+    // Student Information
+    doc.setTextColor(textColor);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Student Details', 20, 30);
+    doc.setLineWidth(0.5);
+    doc.setDrawColor(accentColor);
+    doc.line(20, 32, 190, 32); 
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Registration No: ${enhancedResult.regNo}`, 20, 40);
+    doc.text(`Name: ${enhancedResult.studentName}`, 20, 48);
+    doc.text(`Sex: ${enhancedResult.sex}`, 20, 56);
+    doc.text(`School: ${enhancedResult.school}`, 20, 64);
+    doc.text(`Examination: ${enhancedResult.examName}`, 20, 72);
+    doc.text(`Date: ${enhancedResult.examData?.date ? new Date(enhancedResult.examData.date).toLocaleDateString() : 'N/A'}`, 20, 80);
+
+    // Subject-wise Results Table
+    doc.setFont('helvetica', 'bold');
+    doc.text('Subject-wise Results', 20, 90);
+    doc.line(20, 92, 190, 92); 
+
+    // Table Header
+    doc.setFillColor(headerBgColor);
+    doc.rect(20, 95, 170, 8, 'F');
+    doc.setTextColor(textColor);
+    doc.setFontSize(11);
+    doc.text('Subject', 22, 100);
+    doc.text('Marks', 100, 100, { align: 'center' });
+    doc.text('Grade', 160, 100, { align: 'center' });
+    doc.setDrawColor(primaryColor);
+    doc.line(20, 103, 190, 103); // Table header bottom line
+
+    // Table Rows
+    let y = 103;
+    enhancedResult.subjects.forEach(({ subject, mark, grade }, index) => {
+      y += 8;
+      doc.setFillColor(index % 2 === 0 ? rowBgColor : '#FFFFFF');
+      doc.rect(20, y - 5, 170, 8, 'F');
+      doc.setTextColor(textColor);
+      doc.setFont('helvetica', 'normal');
+      doc.text(subject.toUpperCase(), 22, y);
+      doc.text(`${mark}/100`, 100, y, { align: 'center' });
+      doc.setTextColor(grade === 'A+' || grade === 'A' ? '#16A34A' : grade === 'B' ? '#CA8A04' : '#EF4444');
+      doc.text(grade, 160, y, { align: 'center' });
+    });
+
+    // Table Bottom Line
+    doc.setDrawColor(primaryColor);
+    doc.line(20, y + 3, 190, y + 3);
+
+    // Result Summary
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(textColor);
+    doc.text('Result Summary', 20, y + 13);
+    doc.line(20, y + 15, 190, y + 15); 
+
+    doc.setFont('helvetica', 'normal');
+    y += 20;
+    doc.text(`Total Marks: ${enhancedResult.total}/${enhancedResult.subjects.length * 100}`, 20, y);
+    doc.text(`Percentage: ${enhancedResult.percentage}%`, 20, y + 8);
+    doc.setTextColor(enhancedResult.grade === 'A+' || enhancedResult.grade === 'A' ? '#16A34A' : enhancedResult.grade === 'B' ? '#CA8A04' : '#EF4444');
+    doc.text(`Overall Grade: ${enhancedResult.grade}`, 20, y + 16);
+    doc.setTextColor(enhancedResult.status === 'Pass' ? '#16A34A' : '#EF4444');
+    doc.text(`Status: ${enhancedResult.status}`, 20, y + 24);
+    doc.setTextColor(textColor);
+    doc.text(`Result: ${enhancedResult.resultStatus}`, 20, y + 32);
+
+    // Footer
+    doc.setDrawColor(accentColor);
+    doc.line(20, 270, 190, 270);
+    doc.setFontSize(10);
+    doc.setTextColor(textColor);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 275);
+    doc.text('Page 1 of 1', 190, 275, { align: 'right' });
+
+    // Border
+    doc.setDrawColor(primaryColor);
+    doc.setLineWidth(0.3);
+    doc.rect(10, 10, 190, 277);
+
     doc.save('result.pdf');
   };
 
   return (
     <div className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 sm:p-6 relative">
       <div className="absolute inset-0 bg-gray-100 bg-opacity-20 sm:bg-opacity-30"></div>
-
-      {/* Result Container */}
       {enhancedResult && (
         <div className="relative backdrop-blur-sm bg-white/80 rounded-lg shadow-2xl w-full max-w-md sm:max-w-lg lg:max-w-2xl animate-in slide-in-from-right duration-500">
-          {/* Header */}
           <div className="text-center py-6">
             <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 flex items-center justify-center gap-2">
               Examination Result
             </h2>
           </div>
-
-          {/* Content */}
           <div className="px-6 pb-6 space-y-6">
-            {/* Student Info */}
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 space-y-2">
-              {/* <div className="flex justify-between items-center text-sm sm:text-base">
-                <span className="text-gray-600 font-medium">ID:</span>
-                <span className="font-semibold text-gray-800">{enhancedResult._id || 'N/A'}</span>
-              </div> */}
               <div className="flex justify-between items-center text-sm sm:text-base">
                 <span className="text-gray-600 font-medium">Reg No:</span>
                 <span className="font-semibold text-gray-800">{enhancedResult.regNo}</span>
@@ -133,8 +194,6 @@ const Result = () => {
                 <span className="font-semibold text-gray-800">{enhancedResult.examName}</span>
               </div>
             </div>
-
-            {/* Subject-wise Results Table */}
             <div>
               <h3 className="font-semibold text-gray-800 mb-3 text-sm sm:text-base">Subject-wise Results</h3>
               <div className="border border-gray-200 rounded-lg overflow-hidden">
@@ -148,19 +207,17 @@ const Result = () => {
                     key={index}
                     className="grid grid-cols-3 text-sm sm:text-base border-t border-gray-200 bg-gray-50"
                   >
-                    <div className="p-3 border-r border-gray-200">{subject}</div>
-                    <div className="p-3 border-r border-gray-200 text-center">{mark}/100</div>
-                    <div className="p-3 text-center font-semibold text-gray-800">{grade}</div>
+                    <div className="p-3 border-r border-gray-200">{subject.toUpperCase()}</div>
+                    <div className="p-3 border-r border-gray-200 text-center">{mark} /100</div>
+                    <div className={`p-3 text-center font-semibold ${getGradeColor(grade)}`}>{grade}</div>
                   </div>
                 ))}
               </div>
             </div>
-
-            {/* Result Summary */}
             <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 space-y-2">
               <div className="flex justify-between items-center text-sm sm:text-base">
                 <span className="text-gray-600 font-medium">Total Marks:</span>
-                <span className="font-bold text-gray-800">{enhancedResult.total}/300</span>
+                <span className="font-bold text-gray-800">{enhancedResult.total}/{enhancedResult.subjects.length * 100}</span>
               </div>
               <div className="flex justify-between items-center text-sm sm:text-base">
                 <span className="text-gray-600 font-medium">Percentage:</span>
@@ -179,8 +236,6 @@ const Result = () => {
                 </span>
               </div>
             </div>
-
-            {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={downloadPDF}

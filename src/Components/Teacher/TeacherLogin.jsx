@@ -33,8 +33,6 @@ const TeacherLogin = () => {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Check if the user is a teacher (you might want to add additional checks here)
-      // For example, you could check Firestore to verify the user has teacher role
       
       setSuccess('Login successful!');
       setTimeout(() => {
@@ -72,7 +70,7 @@ const TeacherLogin = () => {
           src="/teacherr.png" 
         />
       </div>
-      <div className="bg-white/40 backdrop-blur-md rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-md animate-in slide-in-from-right duration-500">
+      <div className="bg-white/40 backdrop-blur-md rounded-2xl  p-6 sm:p-8 w-full max-w-md animate-in slide-in-from-right duration-500 ">
         <div className="text-center mb-8">
           <h1 className="text-xl sm:text-2xl font-bold text-[#93478E] mb-2">
             Teacher Login
@@ -114,11 +112,11 @@ const TeacherLogin = () => {
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
-          <div className="text-center text-sm mt-4">
+          {/* <div className="text-center text-sm mt-4">
             <Link to="/forgot-password" className="text-[#93478E] hover:underline">
               Forgot password?
             </Link>
-          </div>
+          </div> */}
         </form>
       </div>
     </div>

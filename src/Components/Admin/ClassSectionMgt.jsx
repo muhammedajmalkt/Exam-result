@@ -1,344 +1,9 @@
-// import { useState, useEffect } from 'react';
-// import { Save, Edit, Trash2, Check, X } from 'lucide-react';
-
-// const ClassSectionManagement = () => {
-//   const [className, setClassName] = useState('');
-//   const [startSection, setStartSection] = useState('A');
-//   const [endSection, setEndSection] = useState('');
-//   const [singleSection, setSingleSection] = useState(false);
-//   const [error, setError] = useState('');
-//   const [success, setSuccess] = useState('');
-//   const [isVisible, setIsVisible] = useState(false);
-
-//   // List of saved classes (each with className, startSection, endSection)
-//   const [savedClasses, setSavedClasses] = useState([]);
-
-//   // For editing mode
-//   const [editIndex, setEditIndex] = useState(null);
-//   const [editStart, setEditStart] = useState('');
-//   const [editEnd, setEditEnd] = useState('');
-//   const [editSingleSection, setEditSingleSection] = useState(false);
-
-//   useEffect(() => {
-//     setIsVisible(true);
-//   }, []);
-
-//   const generateSections = (start, end) => {
-//     if (!start || !end) return [];
-//     const startCode = start.charCodeAt(0);
-//     const endCode = end.charCodeAt(0);
-//     if (endCode < startCode) return [];
-//     return Array.from(
-//       { length: endCode - startCode + 1 },
-//       (_, i) => String.fromCharCode(startCode + i)
-//     );
-//   };
-
-//   // Validate input fields before add/update
-//   const validate = (clsName, start, end, single) => {
-//     const number = parseInt(clsName.trim(), 10);
-//     if (!clsName.trim()) return 'Class name is required.';
-//     // if (isNaN(number) || number < 1 || number > 10)
-//     //   return 'Class name must be a number between 1 and 10.';
-//     if (!start.match(/^[A-Z]$/)) return 'Start section must be a single uppercase letter (A-Z).';
-//     if (!single && !end.match(/^[A-Z]$/)) return 'End section must be a single uppercase letter (A-Z).';
-//     if (!single && end.charCodeAt(0) < start.charCodeAt(0))
-//       return 'End section must come after start section alphabetically.';
-//     return '';
-//   };
-
-//   const resetForm = () => {
-//     setClassName('');
-//     setStartSection('A');
-//     setEndSection('');
-//     setSingleSection(false);
-//   };
-
-//   const handleSubmit = (e) => {
-//     e.preventDefault();
-//     setError('');
-//     setSuccess('');
-
-//     const errMsg = validate(className, startSection, endSection, singleSection);
-//     if (errMsg) {
-//       setError(errMsg);
-//       return;
-//     }
-
-//     // Save only startSection and endSection (or startSection twice if single)
-//     const newEntry = {
-//       className: className.trim(),
-//       startSection,
-//       endSection: singleSection ? startSection : endSection,
-//       singleSection,
-//     };
-//     // Check for duplicates - you can customize if needed
-//     const exists = savedClasses.some((item) => item.className === newEntry.className);
-//     if (exists) {
-//       setError('Class name already exists. Please edit the existing entry.');
-//       return;
-//     }
-
-//     setSavedClasses([...savedClasses, newEntry]);
-//     setSuccess('Class and sections added successfully!');
-//     resetForm();
-
-//     setTimeout(() => setSuccess(''), 3000);
-//   };
-//   console.log(savedClasses);
-  
-
-//   const handleDelete = (index) => {
-//     if (window.confirm('Are you sure you want to delete this class?')) {
-//       const updated = [...savedClasses];
-//       updated.splice(index, 1);
-//       setSavedClasses(updated);
-//       // If deleting currently edited, cancel edit
-//       if (editIndex === index) cancelEdit();
-//     }
-//   };
-
-//   const startEdit = (index) => {
-//     const item = savedClasses[index];
-//     setEditIndex(index);
-//     setClassName(item.className);
-//     setEditStart(item.startSection);
-//     setEditEnd(item.endSection);
-//     setEditSingleSection(item.singleSection);
-//     setError('');
-//     setSuccess('');
-//   };
-
-//   const cancelEdit = () => {
-//     setEditIndex(null);
-//     resetForm();
-//     setError('');
-//     setSuccess('');
-//   };
-
-//   const saveEdit = () => {
-//     const errMsg = validate(className, editStart, editEnd, editSingleSection);
-//     if (errMsg) {
-//       setError(errMsg);
-//       return;
-//     }
-
-//     // Update the savedClasses array
-//     const updated = [...savedClasses];
-//     updated[editIndex] = {
-//       className: className.trim(),
-//       startSection: editStart,
-//       endSection: editSingleSection ? editStart : editEnd,
-//       singleSection: editSingleSection,
-//     };
-//     setSavedClasses(updated);
-//     setSuccess('Class updated successfully!');
-//     setEditIndex(null);
-//     resetForm();
-//     setTimeout(() => setSuccess(''), 3000);
-//   };
-
-//   const displaySections = (item) => {
-//     if (item.singleSection) return [item.startSection];
-//     return generateSections(item.startSection, item.endSection);
-//   };
-
-//   return (
-//     <>
-//       <div className=" mx-auto p-6 bg-white/80 backdrop-blur-sm rounded-lg border border-gray-300">
-//         <h2 className="text-xl font-semibold text-gray-800 mb-4">
-//           Add Class & Sections
-//         </h2>
-
-//         <form
-//           onSubmit={
-//             editIndex === null
-//               ? handleSubmit
-//               : (e) => {
-//                   e.preventDefault();
-//                   saveEdit();
-//                 }
-//           }
-//           className="space-y-4"
-//         >
-//           <div>
-//             <label className="block text-sm font-medium text-gray-700">
-//               Class Name
-//             </label>
-//             <select
-//               value={className}
-//               onChange={(e) => setClassName(e.target.value)}
-//               className="mt-1 block w-full h-10 p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-sm"
-//             >
-//               <option value="">Select a class</option>
-//               {[...Array(10)].map((_, i) => (
-//                 <option key={i + 1} value={(i + 1).toString()}>
-//                   Class {i + 1}
-//                 </option>
-//               ))}
-//               <option value="+1"> Class +1 </option>
-//               <option value="+2"> Class +2 </option>
-//             </select>
-//           </div>
-
-//           <div className="flex items-center gap-4">
-//             <input
-//               type="checkbox"
-//               id="singleSection"
-//               checked={editIndex !== null ? editSingleSection : singleSection}
-//               onChange={() => {
-//                 if (editIndex !== null) {
-//                   setEditSingleSection(!editSingleSection);
-//                   if (!editSingleSection) setEditEnd("");
-//                 } else {
-//                   setSingleSection(!singleSection);
-//                   if (!singleSection) setEndSection("");
-//                 }
-//               }}
-//               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-//             />
-//             <label
-//               htmlFor="singleSection"
-//               className="text-sm font-medium text-gray-700"
-//             >
-//               Single Section
-//             </label>
-//           </div>
-
-//           <div className="flex gap-4">
-//             <div className="flex-1">
-//               <label className="block text-sm font-medium text-gray-700">
-//                 Start Section
-//               </label>
-//               <input
-//                 type="text"
-//                 value={editIndex !== null ? editStart : startSection}
-//                 onChange={(e) =>
-//                   editIndex !== null
-//                     ? setEditStart(e.target.value.toUpperCase().slice(0, 1))
-//                     : setStartSection(e.target.value.toUpperCase().slice(0, 1))
-//                 }
-//                 placeholder="e.g., A"
-//                 className="mt-1 block w-full h-10 p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-sm"
-//               />
-//             </div>
-
-//             {(editIndex !== null ? !editSingleSection : !singleSection) && (
-//               <div className="flex-1">
-//                 <label className="block text-sm font-medium text-gray-700">
-//                   End Section
-//                 </label>
-//                 <input
-//                   type="text"
-//                   value={editIndex !== null ? editEnd : endSection}
-//                   onChange={(e) =>
-//                     editIndex !== null
-//                       ? setEditEnd(e.target.value.toUpperCase().slice(0, 1))
-//                       : setEndSection(e.target.value.toUpperCase().slice(0, 1))
-//                   }
-//                   placeholder="e.g., E"
-//                   className="mt-1 block w-full h-10 p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-sm"
-//                 />
-//               </div>
-//             )}
-//           </div>
-
-//           {error && <p className="text-red-500 text-sm">{error}</p>}
-//           {success && <p className="text-green-500 text-sm">{success}</p>}
-
-//           <button
-//             type="submit"
-//             className="w-full h-10 bg-gradient-to-r bg-[#3D4577] hover:bg-[#3d4577e5] rounded-lg text-white font-semibold flex items-center justify-center gap-2"
-//           >
-//             {editIndex === null ? (
-//               <>
-//                 <Save size={18} /> Save Class
-//               </>
-//             ) : (
-//               <>
-//                 <Check size={18} /> Save Changes
-//               </>
-//             )}
-//           </button>
-
-//           {editIndex !== null && (
-//             <button
-//               type="button"
-//               onClick={cancelEdit}
-//               className="w-full h-10 border border-gray-400 rounded-lg text-gray-700 font-semibold hover:bg-gray-100"
-//             >
-//               <X size={18} className="inline-block mr-2" /> Cancel Edit
-//             </button>
-//           )}
-//         </form>
-//       </div>
-//       {/* Table showing saved classes */}
-
-//       <div className="mt-10  ">
-//         <h3 className="text-lg font-semibold text-gray-800 mb-4">
-//           Saved Classes & Sections
-//         </h3>
-
-//         {savedClasses.length === 0 ? (
-//           <p className="text-gray-600 italic">No classes added yet.</p>
-//         ) : (
-//           <div className="overflow-x-auto rounded-lg border border-gray-300  max-w-5xl ">
-//             <table className="min-w-full divide-y divide-gray-200 text-sm bg-gray-50">
-//               <thead className="">
-//                 <tr>
-//                   <th className="px-4 py-2 text-left font-medium text-gray-700">
-//                     Class Name
-//                   </th>
-//                   <th className="px-4 py-2 text-left font-medium text-gray-700">
-//                     Sections
-//                   </th>
-//                   <th className="px-4 py-2 text-center font-medium text-gray-700 w-32">
-//                     Actions
-//                   </th>
-//                 </tr>
-//               </thead>
-//               <tbody className="divide-y divide-gray-200">
-//                 {savedClasses.map((item, index) => (
-//                   <tr key={item.className}>
-//                     <td className="px-4 py-3">{item.className}</td>
-//                     <td className="px-4 py-3">
-//                       {displaySections(item).join(", ")}
-//                       {item.singleSection && " (Single Section)"}
-//                     </td>
-//                     <td className="px-4 py-3 text-center space-x-2">
-//                       <button
-//                         onClick={() => startEdit(index)}
-//                         className="inline-flex items-center justify-center p-1 rounded hover:bg-gray-200"
-//                         title="Edit"
-//                       >
-//                         <Edit size={18} className="text-blue-600" />
-//                       </button>
-//                       <button
-//                         onClick={() => handleDelete(index)}
-//                         className="inline-flex items-center justify-center p-1 rounded hover:bg-gray-200"
-//                         title="Delete"
-//                       >
-//                         <Trash2 size={18} className="text-red-600" />
-//                       </button>
-//                     </td>
-//                   </tr>
-//                 ))}
-//               </tbody>
-//             </table>
-//           </div>
-//         )}
-//       </div>
-//     </>
-//   );
-// };
-
-// export default ClassSectionManagement;
-
 import { useState, useEffect } from 'react';
 import { Save, Edit, Trash2, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { firestore } from '../../Firebase/Config'; 
 import { toast } from 'sonner';
+import Swal from 'sweetalert2';
 
 const ClassSectionManagement = () => {
   const [allSections, setAllSections] = useState([]);
@@ -356,12 +21,10 @@ const ClassSectionManagement = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch sections
         const sectionsSnapshot = await getDocs(collection(firestore, 'sections'));
         const sectionsData = sectionsSnapshot.docs.map(doc => doc.data().name);
         setAllSections(sectionsData);
 
-        // Fetch classes
         const classesSnapshot = await getDocs(collection(firestore, 'classes'));
         const classesData = classesSnapshot.docs.map(doc => ({
           id: doc.id,
@@ -380,7 +43,6 @@ const ClassSectionManagement = () => {
     fetchData();
   }, []);
 
-  // Add new section to master list
   const addSection = async (e) => {
    e.preventDefault()
     if (!newSection.trim()) {
@@ -397,7 +59,6 @@ const ClassSectionManagement = () => {
     }
 
     try {
-      // Check if section already exists in Firestore
       const sectionQuery = query(
         collection(firestore, 'sections'),
         where('name', '==', section)
@@ -410,10 +71,8 @@ const ClassSectionManagement = () => {
         return;
       }
 
-      // Add to Firestore
       await addDoc(collection(firestore, 'sections'), { name: section });
       
-      // Update local state
       setAllSections([...allSections, section]);
       setNewSection('');
       setError('');
@@ -427,9 +86,7 @@ const ClassSectionManagement = () => {
     }
   };
 
-  // Remove section from master list
   const removeSection = async (section) => {
-    // Check if section is assigned to any class
     const isUsed = savedClasses.some(cls => cls.sections.includes(section));
 
     if (isUsed) {
@@ -440,7 +97,6 @@ const ClassSectionManagement = () => {
     }
 
     try {
-      // Find the document ID for the section
       const sectionQuery = query(
         collection(firestore, 'sections'),
         where('name', '==', section)
@@ -448,11 +104,9 @@ const ClassSectionManagement = () => {
       const querySnapshot = await getDocs(sectionQuery);
       
       if (!querySnapshot.empty) {
-        // Delete the document
         await deleteDoc(doc(firestore, 'sections', querySnapshot.docs[0].id));
       }
 
-      // Update local state
       setAllSections(allSections.filter(s => s !== section));
       setSuccess(`Section ${section} removed successfully`);
       setTimeout(() => setSuccess(''), 3000);
@@ -472,7 +126,6 @@ const ClassSectionManagement = () => {
     );
   };
 
-  // Save class with selected sections
   const saveClass = async () => {
     if (!className) {
       setError('Please select a class');
@@ -491,16 +144,13 @@ const ClassSectionManagement = () => {
 
     try {
       if (editingId) {
-        // Update existing class in Firestore
         await updateDoc(doc(firestore, 'classes', editingId), classData);
         
-        // Update local state
         setSavedClasses(savedClasses.map(cls => 
           cls.id === editingId ? { ...cls, ...classData } : cls
         ));
         setSuccess('Class updated successfully');
       } else {
-        // Check if class already exists
         const classQuery = query(
           collection(firestore, 'classes'),
           where('name', '==', className)
@@ -513,10 +163,8 @@ const ClassSectionManagement = () => {
           return;
         }
         
-        // Add new class to Firestore
         const docRef = await addDoc(collection(firestore, 'classes'), classData);
         
-        // Update local state with the new document ID
         setSavedClasses([...savedClasses, { id: docRef.id, ...classData }]);
         setSuccess('Class added successfully');
         toast('Class added successfully',{style:{backgroundColor:"#308051", color:"white"}})
@@ -541,27 +189,30 @@ const ClassSectionManagement = () => {
     setSelectedSections([...cls.sections]);
     setEditingId(classId);
   };
+const deleteClass = async (classId) => {
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: 'Are you sure you want to delete this class?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, delete it!',
+    cancelButtonText: 'Cancel',
+  });
 
-  // Delete class
-  const deleteClass = async (classId) => {
-    if (window.confirm('Are you sure you want to delete this class?')) {
-      try {
-        // Delete from Firestore
-        await deleteDoc(doc(firestore, 'classes', classId));
-        
-        // Update local state
-        setSavedClasses(savedClasses.filter(cls => cls.id !== classId));
-        if (editingId === classId) resetForm();
-        setSuccess('Class deleted successfully');
-        setTimeout(() => setSuccess(''), 3000);
-      } catch (err) {
-        setError('Failed to delete class');
-        console.error(err);
-      }
+  if (result.isConfirmed) {
+    try {
+      await deleteDoc(doc(firestore, 'classes', classId));
+      setSavedClasses(savedClasses.filter(cls => cls.id !== classId));
+      if (editingId === classId) resetForm();
+      setSuccess('Class deleted successfully');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError('Failed to delete class');
+      console.error(err);
     }
-  };
+  }
+};
 
-  // Reset form
   const resetForm = () => {
     setClassName('');
     setSelectedSections([]);
@@ -761,15 +412,15 @@ const ClassSectionManagement = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-[#3D4577]">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                     Class
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                     Sections
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
