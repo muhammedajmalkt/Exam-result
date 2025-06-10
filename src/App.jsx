@@ -37,17 +37,42 @@ function App() {
               <Route path="add-students" element={<Students />} />
               <Route path="class-section" element={<ClassSectionManagement />} />
             </Route>
+      <Context>
+        <Toaster position="top-right" />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/result" element={<Result />} />
+            <Route path="/admin" element={<AdminLogin />} />
+            <Route path="/teacher" element={<TeacherLogin />} />
+
+            <Route path="/admin/dashboard" element={ <ProtectedRoute role="admin"> <AdminLayout /> </ProtectedRoute> } >
+
+              <Route index element={<Dashboard />} />
+              <Route path="add-exam" element={<AddExams />} />
+              <Route path="add-teacher" element={<Teachers />} />
+              <Route path="add-students" element={<Students />} />
+              <Route path="class-section" element={<ClassSectionManagement />} />
+            </Route>
 
             <Route path="/teacher-dash" element={ <ProtectedRoute role="teacher"> <TeacherDashboard /> </ProtectedRoute> } >
+            <Route path="/teacher-dash" element={ <ProtectedRoute role="teacher"> <TeacherDashboard /> </ProtectedRoute> } >
               <Route path="exam-entry/:regNo" element={<ExamEntry />} />
+            </Route>
             </Route>
 
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </Context>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </Context>
     </>
+  );
   );
 }
 
+export default App;
 export default App;
