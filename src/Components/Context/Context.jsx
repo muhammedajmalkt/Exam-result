@@ -2,7 +2,9 @@ import React, { createContext, useState } from 'react'
 
 export const Mycontext = createContext()
 const Context = ({children}) => {
-      const [result, setResult] = useState(null);
+      const [result, setResult] = useState(()=>{
+        return JSON.parse(sessionStorage.getItem("result")) || null
+      });
     
   return (
     <Mycontext.Provider value={{result,setResult}}>

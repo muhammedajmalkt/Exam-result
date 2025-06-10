@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Save, Edit, Trash2, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
-import { firestore } from '../../Firebase/Config'; 
+import { firestore } from '../../Firebase/config'; 
 import { toast } from 'sonner';
 import Swal from 'sweetalert2';
 
@@ -411,8 +411,8 @@ const deleteClass = async (classId) => {
           <p className="text-gray-500 italic text-center py-4">No classes have been configured yet</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-[#3D4577]">
+            <table className="min-w-full divide-y divide-gray-200 bg-[#3D4577] rounded">
+              <thead className=" ">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                     Class

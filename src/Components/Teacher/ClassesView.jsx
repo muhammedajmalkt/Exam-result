@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
-import { firestore, auth } from '../../Firebase/Config';
+import { firestore, auth } from '../../Firebase/config';
 
 const ClassesView = () => {
     const [assignedClasses, setAssignedClasses] = useState([]);
@@ -89,7 +89,7 @@ const ClassesView = () => {
     
 
     return (
-        <div className="ml-0 lg:ml-64 pt-28 rounded-2xl p-8 w-full mx-auto ">
+        <div className="ml-0 lg:ml-64 pt-28  p-8 w-full mx-auto ">
 
 
             {assignedClasses.length === 0 ? (
@@ -117,8 +117,8 @@ const ClassesView = () => {
                         {cls.students.length === 0 ? (
                             <p className="text-gray-500">No students in this class.</p>
                         ) : (
-                            <div className="overflow-x-auto rounded-xl">
-                                <table className="min-w-full bg-parchment-50 rounded-xl border border-[#3D4577]">
+                            <div className="overflow-x-auto rounded-lg">
+                                <table className="min-w-full bg-parchment-50 rounded-lg border border-[#3D4577]">
                                     <thead>
                                         <tr
                                             className="bg-[#3D4577] text-cyan-50 font-medium text-base tracking-wide"

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../Firebase/Config'; 
+import { auth } from '../../Firebase/config'; 
 
 const TeacherLogin = () => {
   const [email, setEmail] = useState('');
@@ -124,3 +124,4 @@ const TeacherLogin = () => {
 };
 
 export default TeacherLogin;
+

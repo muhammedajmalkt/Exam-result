@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { usePapaParse } from 'react-papaparse';
 import { Search, Filter, Users, User, Hash, BookOpenText, Bookmark, FileX, Edit, Trash2, Check, X, Download, Upload } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc, query, where } from 'firebase/firestore';
-import { firestore } from '../../Firebase/Config'; 
+import { firestore } from '../../Firebase/config'; 
 import { toast } from 'sonner';
 import Swal from 'sweetalert2';
 

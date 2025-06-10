@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, X, Edit, Trash2, Check, Loader2 } from 'lucide-react';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { firestore } from '../../Firebase/Config';
+import { firestore } from '../../Firebase/config'; 
 import { toast } from 'sonner';
 import Swal from 'sweetalert2';
 
@@ -320,9 +320,9 @@ const handleDelete = async (id) => {
                     <tr key={exam.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="p-3 font-medium text-gray-900">{exam.name}</td>
                       <td className="p-3">
-                        <ul className="list-disc list-inside">
+                        <ul className="list-disc sm:list-outside sm:pl-8">
                           {exam.subjects.map((subject, index) => (
-                            <li key={index}>{subject.name}</li>
+                            <li key={index} className="sm:pl-2">{subject.name}</li>
                           ))}
                         </ul>
                       </td>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Edit, Trash2, Check, X, Loader2 } from 'lucide-react';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { firestore, auth } from '../../Firebase/Config';
+import { firestore, auth } from '../../Firebase/config';
 import { toast } from 'sonner';
 import Swal from 'sweetalert2';
 

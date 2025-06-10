@@ -10,7 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@radix-ui/react-select": "^2.2.5",
     "@tailwindcss/vite": "^4.1.8",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "firebase": "^11.8.1",
     "framer-motion": "^12.16.0",
     "jspdf": "^3.0.1",
@@ -23,6 +26,7 @@
     "recharts": "^2.15.3",
     "sonner": "^2.0.5",
     "sweetalert2": "^11.22.0",
+    "tailwind-merge": "^3.3.0",
     "tailwindcss": "^4.1.8"
   },
   "devDependencies": {
@@ -34,6 +38,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "tw-animate-css": "^1.3.4",
     "vite": "^6.3.5"
   }
 }

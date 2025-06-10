@@ -1,8 +1,15 @@
 import { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { firestore } from '../../Firebase/Config'; 
-import { Mycontext } from '../Context/Context';
+import { firestore } from '../../Firebase/config'; 
+import { Mycontext } from '../Context/Context'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select"
 
 const Home = () => {
   const { result, setResult } = useContext(Mycontext);
@@ -78,9 +85,20 @@ const Home = () => {
       const examMarksData = examMarksSnapshot.docs[0].data();
       const marks = examMarksData.subjects || [];
       const total = marks.reduce((sum, subject) => sum + (subject.score || 0), 0);
-      const maxMarks = marks.length * 100; // Each subject out of 100
+      const maxMarks = marks.length * 100; 
       const percentage = maxMarks > 0 ? (total / maxMarks) * 100 : 0;
 
+      const rr = {studentName: studentData.name || studentData.studentName || 'Unknown',
+        regNo: regNo,
+        examName: exams.find(e => e.id === exam)?.name || exam,
+        marks: marks, 
+        total: total,
+        percentage: parseFloat(percentage.toFixed(2)),
+        studentData: studentData,
+        examData: examMarksData
+      }
+      sessionStorage.setItem("result",JSON.stringify(rr))
+      
       setResult({
         studentName: studentData.name || studentData.studentName || 'Unknown',
         regNo: regNo,
@@ -101,45 +119,59 @@ const Home = () => {
       setLoading(false);
     }
   };
-
+  if (loadingExams) {
+    return (
+      <div className="flex justify-center items-center min-h-screen w-full">
+        <div className="animate-spin rounded-full h-7 w-7 border-t-2 border-b-2 border-blue-500 bg-transparent"></div> 
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen flex flex-col lg:flex-row lg:p-16 p-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <div className="w-full lg:w-1/2 h-72 lg:h-auto relative">
+      <div className="w-full lg:w-1/2 h-72 lg:h-auto relative ">
         <img
+          // src="/result.png"
+          loading='lazy'
           src="/students.png"
           alt="Students"
-          className="absolute inset-0 w-full h-full object-cover p-16"
+          className="absolute inset-0 w-full h-full object-cover  p-16 "
         />
       </div>
       <div className="w-full lg:w-1/2 flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        <div className="bg-white/40 backdrop-blur-md rounded-2xl shadow-2xl p-8 w-full max-w-md lg:max-w-lg transition-all duration-300">
+        <div className="rounded-2xl shadow-2xl p-8 w-full max-w-md lg:max-w-lg transition-all duration-300">
           <div className="text-center mb-12">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
               Student Result Portal
             </h1>
             <p className="text-gray-600 text-xs">Access your academic results instantly</p>
           </div>
+      
           <div className="space-y-4">
-            <div>
-              <label htmlFor="exam" className="block text-sm font-medium text-gray-700">
-                Select Exam
-              </label>
-              <select
-                id="exam"
-                value={exam}
-                onChange={(e) => setExam(e.target.value)}
-                disabled={loadingExams}
-                className="mt-1 block w-full h-10 p-2 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 disabled:bg-gray-100"
-              >
-                <option value="">
-                  {loadingExams ? 'Loading exams...' : 'Select an exam'}
-                </option>
-                {exams.map((examItem) => (
-                  <option key={examItem.id} value={examItem.id}>
-                    {examItem.name || examItem.examName || examItem.id}
-                  </option>
-                ))}
-              </select>
+            <div >
+        
+              <div className="relative">
+                <label htmlFor="exam" className="block text-sm font-medium text-gray-700 mb-1">
+                  Select Exam
+                </label>
+                <Select
+                  onValueChange={(value) => setExam(value)}
+                  value={exam}
+                  disabled={loadingExams}
+                >
+                  <SelectTrigger className="w-full h-10  border-none shadow-sm ">
+                    <SelectValue placeholder={loadingExams ? "Loading exams..." : "Select an exam"} />
+                  </SelectTrigger>
+                  <SelectContent className="border-none shadow-md bg-blue-50 ">
+                    {exams.map((examItem) => (
+                      <SelectItem className="bg-blue-50  " key={examItem.id} value={examItem.id}>
+                        {examItem.name || examItem.examName || examItem.id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+
             </div>
             <div>
               <label htmlFor="regNo" className="block text-sm font-medium text-gray-700">

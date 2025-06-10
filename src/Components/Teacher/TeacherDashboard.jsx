@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { Menu, X, LogOut, Users, BookOpen } from 'lucide-react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '../../Firebase/Config'; 
+import { auth } from '../../Firebase/config'; 
 import { Outlet } from 'react-router-dom';
 import ClassesView from './ClassesView';
 import { toast } from 'sonner';
+import Swal from 'sweetalert2';
 
 const Exams = () => {
   return (
@@ -24,6 +25,7 @@ const TeacherDashboard = () => {
   const [isTeacherAuthenticated, setTeacherAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
 
   // Monitor authentication state
   useEffect(() => {
@@ -47,17 +49,34 @@ const TeacherDashboard = () => {
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-  const handleLogout = async () => {
-    try {
+
+
+const handleLogout = async () => {
+  try {
+    const result = await Swal.fire({
+      title: 'Logout Confirmation',
+      text: 'Are you sure you want to log out?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, Logout',
+      cancelButtonText: 'Cancel',
+    });
+
+    if (result.isConfirmed) {
       await signOut(auth);
       setTeacherAuthenticated(false);
-      toast.success('Logged out successfully');
-      navigate('/teacher');
-    } catch (error) {
-      console.error('Error logging out:', error);
-      toast.error('Failed to log out. Please try again.');
+      Swal.fire({ title: 'Logged Out!', text: 'You have been successfully logged out.', icon: 'success', timer:2000});
+       navigate('/teacher'); 
     }
-  };
+  } catch (error) {
+    console.error('Error logging out:', error);
+    Swal.fire({ title: 'Logout Failed', text: 'Failed to log out. Please try again.', icon: 'error', confirmButtonColor: '#d33', });
+  }
+};
+
+  
 
   if (loading) {
     return (

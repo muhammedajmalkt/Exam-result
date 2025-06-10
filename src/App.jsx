@@ -14,6 +14,7 @@ import ExamEntry from './Components/Teacher/ExamEntry'
 import Dashboard from './Components/Admin/Dashboard'
 import AdminLayout from './Components/Admin/AdminLayout'
 import { toast, Toaster } from 'sonner'
+import NotFound from './Components/NotFound/NotFound'
 
 function App() {
 
@@ -41,6 +42,7 @@ function App() {
               <Route path="exam-entry/:regNo" element={<ExamEntry />} />
               </Route>
 
+              <Route path='*' element={<NotFound />} />
         </Routes>
     </BrowserRouter>
     </Context>

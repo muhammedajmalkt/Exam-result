@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X, Book, UserPlus, Users, Layers, LogOut, LayoutDashboard } from 'lucide-react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '../../Firebase/Config';
+import { auth } from '../../Firebase/config';
+import Swal from 'sweetalert2';
 
 const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -33,15 +34,30 @@ const AdminLayout = () => {
     { name: 'Class & Section', path: 'class-section', icon: <Layers className="w-5 h-5" /> },
   ];
 
-  const handleLogout = async () => {
-    try {
+
+const handleLogout = async () => {
+  try {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'You will be logged out from the admin panel.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, logout!'
+    });
+
+    if (result.isConfirmed) {
       await signOut(auth);
       setAdminAuthenticated(false);
-      navigate('/admin');
-    } catch (error) {
-      console.error('Logout failed:', error.message);
-    }
-  };
+   Swal.fire({ title: 'Logged Out!', text: 'You have been successfully logged out.', icon: 'success', timer:2000})
+      .then(() => { navigate('/admin'); }); }
+  } catch (error) {
+    Swal.fire( 'Error!', `Logout failed: ${error.message}`, 'error' );
+    console.error('Logout failed:', error.message);
+  }
+};
+
 
   // Render nothing while authentication state is being determined
   // if (isAdminAuthenticated === null) {
@@ -111,7 +127,7 @@ const AdminLayout = () => {
       </div>
 
       {/* Render nested child components */}
-      <div className="ml-0 lg:ml-64 p-5 pt-24">
+      <div className="ml-0 lg:ml-64 lg:p-10 lg:pt-28 pt-28  p-5 ">
         <Outlet />
       </div>
     </div>

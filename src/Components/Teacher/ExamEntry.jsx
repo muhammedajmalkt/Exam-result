@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Save, X, Loader2, Edit, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { collection, getDocs, doc, setDoc, deleteDoc, query, where } from 'firebase/firestore';
-import { firestore } from '../../Firebase/Config';
+import { firestore } from '../../Firebase/config';
 import { toast } from 'sonner';
 import Swal from 'sweetalert2';
 
@@ -260,7 +260,7 @@ const handleDelete = async (markId) => {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, y: 50 }}
       transition={{ duration: 0.5, ease: 'easeInOut' }}
-      className="absolute w-full max-w-4xl mx-auto mt-18 p-6 bg-blue-50/60 backdrop-blur-md rounded-lg shadow-lg sm:relative"
+      className="absolute w-full max-w-4xl mx-auto mt-18 p-6 bg-blue-50 backdrop-blur-md rounded-lg shadow-lg sm:relative "
     >
       <button
         onClick={() => navigate('/teacher-dash')}
@@ -393,9 +393,9 @@ const handleDelete = async (markId) => {
                     <tr key={result.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="p-3 font-medium text-gray-900">{result.examName}</td>
                       <td className="p-3">
-                        <ul className="list-disc list-inside">
+                        <ul className="list-disc   sm:list-outside sm:pl-8">
                           {result.subjects.map((subject, index) => (
-                            <li key={index}>
+                            <li key={index} className="sm:pl-2">
                               {subject.name}: {subject.score}/100
                             </li>
                           ))}
