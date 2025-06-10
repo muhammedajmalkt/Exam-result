@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, LogOut, Users, BookOpen } from 'lucide-react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '../../Firebase/config'; 
-import { Outlet } from 'react-router-dom';
-import ClassesView from './ClassesView';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, firestore } from '../../Firebase/config'
 import { toast } from 'sonner';
-import Swal from 'sweetalert2';
+import handleLogout from './handleLogOut'; 
+import ClassesView from './ClassesView';
 
 const Exams = () => {
   return (
@@ -26,12 +26,26 @@ const TeacherDashboard = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-
-  // Monitor authentication state
+  // Monitor authentication state and verify teacher role
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (teacher) => {
-      if (teacher) {
-        setTeacherAuthenticated(true);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const teacherDocRef = doc(firestore, 'teachers', user.uid);
+          const teacherDoc = await getDoc(teacherDocRef);
+          if (teacherDoc.exists() && teacherDoc.data().role === 'teacher') {
+            setTeacherAuthenticated(true);
+          } else {
+            setTeacherAuthenticated(false);
+            toast.error('Access denied. You are not a teacher.');
+            await signOut(auth);
+          }
+        } catch (error) {
+          console.error('Error verifying teacher role:', error);
+          setTeacherAuthenticated(false);
+          toast.error('Failed to verify authentication.');
+          await signOut(auth);
+        }
       } else {
         setTeacherAuthenticated(false);
       }
@@ -39,8 +53,9 @@ const TeacherDashboard = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [navigate]);
 
+  // Redirect if not authenticated
   useEffect(() => {
     if (!loading && !isTeacherAuthenticated) {
       navigate('/teacher');
@@ -48,35 +63,6 @@ const TeacherDashboard = () => {
   }, [isTeacherAuthenticated, loading, navigate]);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-
-
-
-const handleLogout = async () => {
-  try {
-    const result = await Swal.fire({
-      title: 'Logout Confirmation',
-      text: 'Are you sure you want to log out?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, Logout',
-      cancelButtonText: 'Cancel',
-    });
-
-    if (result.isConfirmed) {
-      await signOut(auth);
-      setTeacherAuthenticated(false);
-      Swal.fire({ title: 'Logged Out!', text: 'You have been successfully logged out.', icon: 'success', timer:2000});
-       navigate('/teacher'); 
-    }
-  } catch (error) {
-    console.error('Error logging out:', error);
-    Swal.fire({ title: 'Logout Failed', text: 'Failed to log out. Please try again.', icon: 'error', confirmButtonColor: '#d33', });
-  }
-};
-
-  
 
   if (loading) {
     return (
@@ -87,11 +73,12 @@ const handleLogout = async () => {
   }
 
   if (!isTeacherAuthenticated) {
-    return null; 
+    return null;
   }
 
   return (
     <div className="min-h-screen flex">
+      {/* Header */}
       <div className="fixed w-full top-0 z-10">
         <header className="bg-white p-4 flex items-center justify-between border-b border-gray-300">
           <button onClick={toggleSidebar} className="lg:hidden">
@@ -109,7 +96,7 @@ const handleLogout = async () => {
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 h-auto bg-gray-50 transition-transform transform border-t border-r border-gray-300 top-[74px] ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gray-50 transition-transform border-t border-r border-gray-300 top-[74px] ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0 transition-transform duration-500 ease-in-out`}
       >
@@ -121,7 +108,10 @@ const handleLogout = async () => {
         <nav className="mt-4 flex flex-col lg:justify-between h-full text-sm font-medium text-black/90">
           <div>
             <button
-              onClick={() => setClicked('class')}
+              onClick={() => {
+                setClicked('class');
+                setIsSidebarOpen(false);
+              }}
               className={`flex items-center px-4 py-3 w-full text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors ${
                 clicked === 'class' ? 'bg-blue-50 text-blue-600' : ''
               }`}
@@ -129,7 +119,10 @@ const handleLogout = async () => {
               <Users className="w-5 h-5" /> <span className="ml-2">Classes</span>
             </button>
             <button
-              onClick={() => setClicked('exam')}
+              onClick={() => {
+                setClicked('exam');
+                setIsSidebarOpen(false);
+              }}
               className={`flex items-center px-4 py-3 w-full text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors ${
                 clicked === 'exam' ? 'bg-blue-50 text-blue-600' : ''
               }`}
@@ -138,7 +131,7 @@ const handleLogout = async () => {
             </button>
           </div>
           <button
-            onClick={handleLogout}
+            onClick={() => handleLogout(setTeacherAuthenticated, navigate)}
             className="flex items-center mb-8 px-4 py-3 sm:text-gray-700 hover:bg-red-50 hover:text-red-600 text-red-600 transition-colors"
           >
             <LogOut className="w-5 h-5" />
@@ -148,9 +141,10 @@ const handleLogout = async () => {
       </div>
 
       {/* Main Content */}
-      {clicked === 'class' && <ClassesView />}
-      {clicked === 'exam' && <Exams />}
-      <Outlet />
+      <div className="flex-1">
+        {clicked === 'class' && <ClassesView />}
+        {clicked === 'exam' && <Exams />}
+      </div>
     </div>
   );
 };

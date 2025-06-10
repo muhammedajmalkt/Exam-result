@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../Firebase/config'; 
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, firestore } from '../../Firebase/config';
+import { toast } from 'sonner';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -40,14 +42,37 @@ const AdminLogin = () => {
     }
 
     try {
-      // Firebase authentication
+      // Firebase Authentication
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Verify admin role in Firestore
+      const adminDocRef = doc(firestore, 'admins', user.uid);
+      const adminDoc = await getDoc(adminDocRef);
+
+      console.log('User UID:', user.uid);
+      console.log('Admin Doc Exists:', adminDoc.exists());
+
+      if (adminDoc.exists()) {
+        console.log('Admin Doc Data:', adminDoc.data());
+        console.log('Role:', adminDoc.data().role);
+      }
+
+      if (!adminDoc.exists() || adminDoc.data().role !== 'admin') {
+        await auth.signOut();
+        setError('You are not authorized to log in as an admin.');
+        toast.error('Access denied. Not an admin account.');
+        setLoading(false);
+        return;
+      }
 
       setSuccess('Login successful!');
+      toast.success('Welcome, Admin!');
       setTimeout(() => {
         navigate('/admin/dashboard');
       }, 1000);
     } catch (error) {
+      console.error('Login error:', error);
       switch (error.code) {
         case 'auth/user-not-found':
           setError('No account found with this email.');
@@ -64,6 +89,7 @@ const AdminLogin = () => {
         default:
           setError('Failed to login. Please try again.');
       }
+      toast.error(error.message || 'Login failed.');
     } finally {
       setLoading(false);
     }
@@ -97,7 +123,7 @@ const AdminLogin = () => {
               </label>
               <input
                 type="email"
-                autoComplete='username'
+                autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@example.com"
@@ -111,7 +137,7 @@ const AdminLogin = () => {
               </label>
               <input
                 type="password"
-                autoComplete='current-password'
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter password"
@@ -130,7 +156,7 @@ const AdminLogin = () => {
             </button>
           </form>
           <p className="mt-4 text-center text-sm text-gray-600">
-            Back to{" "}
+            Back to{' '}
             <Link to="/" className="text-blue-600 hover:underline">
               Home
             </Link>

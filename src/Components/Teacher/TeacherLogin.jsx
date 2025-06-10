@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../Firebase/config'; 
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, firestore } from '../../Firebase/config' 
 
 const TeacherLogin = () => {
   const [email, setEmail] = useState('');
@@ -17,8 +18,8 @@ const TeacherLogin = () => {
     setError('');
     setSuccess('');
 
-    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
-      setError('Valid email is required.');
+    if (!email.trim() || !/\S+@\S+\.\S+/.test(email.trim())) {
+      setError('Valid email is required.')
       setLoading(false);
       return;
     }
@@ -29,14 +30,32 @@ const TeacherLogin = () => {
     }
 
     try {
-      // Sign in with Firebase Authentication
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      // Sign in
+      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
 
-      
+      // Fetch user data
+      const userDocRef = doc(firestore, 'teachers', user.uid); 
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists()) {
+        setError('Teacher account not found. Please contact support or sign up.');
+        await signOut(auth);
+        setLoading(false);
+        return;
+      }
+
+      const userData = userDoc.data();
+      if (userData.role !== 'teacher') {
+        setError('Access denied. You are not a teacher.');
+        await signOut(auth);
+        setLoading(false);
+        return;
+      }
+
       setSuccess('Login successful!');
       setTimeout(() => {
-        navigate('/teacher-dash');
+        navigate('/teacher-dash', { state: { userData } });
       }, 1000);
     } catch (err) {
       console.error('Login error:', err);
@@ -63,14 +82,14 @@ const TeacherLogin = () => {
 
   return (
     <div className="min-h-screen bg-cover bg-center bg-no-repeat flex flex-col lg:flex-row items-center justify-center">
-      <div className='bg-[#93478E] lg:w-3/4 lg:h-screen hidden lg:flex'>
-        <img 
-          className='p-32 object-contain h-full w-full'
-          alt='teacher illustration'
-          src="/teacherr.png" 
+      <div className="bg-[#93478E] lg:w-3/4 lg:h-screen hidden lg:flex">
+        <img
+          className="p-32 object-contain h-full w-full"
+          alt="teacher illustration"
+          src="/teacherr.png"
         />
       </div>
-      <div className="bg-white/40 backdrop-blur-md rounded-2xl  p-6 sm:p-8 w-full max-w-md animate-in slide-in-from-right duration-500 ">
+      <div className="bg-white/40 backdrop-blur-md rounded-2xl p-6 sm:p-8 w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-xl sm:text-2xl font-bold text-[#93478E] mb-2">
             Teacher Login
@@ -112,11 +131,6 @@ const TeacherLogin = () => {
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
-          {/* <div className="text-center text-sm mt-4">
-            <Link to="/forgot-password" className="text-[#93478E] hover:underline">
-              Forgot password?
-            </Link>
-          </div> */}
         </form>
       </div>
     </div>
@@ -124,4 +138,3 @@ const TeacherLogin = () => {
 };
 
 export default TeacherLogin;
-
